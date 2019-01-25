@@ -273,8 +273,16 @@ class TM implements Runnable {
     String temp;
     for( int j = 0; j < ( rightMost - leftMost + 1 ); j++ ) {
       temp = output;
-      output = temp
-          + ( (Character)tape.getValueAt( 0, leftMost + j ) ).charValue();
+      if((leftMost + j) == tapePos)
+      {
+	      output = temp + '['
+	          + ( (Character)tape.getValueAt( 0, leftMost + j ) ).charValue() + ']';
+      }
+      else
+      {
+	      output = temp
+		          + ( (Character)tape.getValueAt( 0, leftMost + j ) ).charValue();
+      }
     }
     return output;
   }

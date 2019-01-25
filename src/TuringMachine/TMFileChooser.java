@@ -30,9 +30,14 @@ public class TMFileChooser extends JFileChooser
   TapePanel tapepanel;
   GraphPanel graphpanel;
   public JTextField maximum;
+  public static String curdir;
 
   public TMFileChooser()
   {
+	if(curdir != null)
+	{
+		this.setCurrentDirectory(new File(curdir));
+	}
     TMFileFilter filter = new TMFileFilter();
     filter.addExtension("tm");
     filter.addExtension("tmo");
@@ -43,6 +48,10 @@ public class TMFileChooser extends JFileChooser
   }
   public TMFileChooser(int variation)
   {
+	if(curdir != null)
+	{
+		this.setCurrentDirectory(new File(curdir));
+	}
     if(variation == 1)
     {
       TMFileFilter filter = new TMFileFilter();
