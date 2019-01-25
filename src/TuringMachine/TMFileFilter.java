@@ -31,9 +31,10 @@ package TuringMachine;
  */
 
 import java.io.File;
-import java.util.Hashtable;
 import java.util.Enumeration;
-import javax.swing.filechooser.*;
+import java.util.Hashtable;
+
+import javax.swing.filechooser.FileFilter;
 
 /**
  * A convenience implementation of FileFilter that filters out all files except
@@ -199,9 +200,9 @@ public class TMFileFilter extends FileFilter {
         // build the description from the extension list
         Enumeration<String> extensions = filters.keys();
         if( extensions != null ) {
-          fullDescription += "." + (String)extensions.nextElement();
+          fullDescription += "." + extensions.nextElement();
           while ( extensions.hasMoreElements() ) {
-            fullDescription += ", " + (String)extensions.nextElement();
+            fullDescription += ", " + extensions.nextElement();
           }
         }
         fullDescription += ")";

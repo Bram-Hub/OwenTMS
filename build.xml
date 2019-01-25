@@ -1,31 +1,38 @@
-<project name="TuringMachineApp" default="compile">
-  
-  <property name="sourcedir" value="${basedir}/src"/>
-  <property name="targetdir" value="${basedir}/bin"/>
-  
-  <target name="clean">
-    <delete dir="${targetdir}"/>
-    <mkdir dir="${targetdir}"/>
-  </target>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="jar" name="Create Runnable Jar for Turing Machine">
 
-  <target name="compile" depends="clean, copy-resources">
-    <javac srcdir="${sourcedir}"
-      destdir="${targetdir}">
-    </javac>
-  </target>
+    <!-- ANT 1.7 is required -->
 
-  <target name="copy-resources">
-    <copy todir="${targetdir}">
-      <fileset dir="${sourcedir}">
-	<exclude name="**/*.java"/>
-      </fileset>
-    </copy>
-  </target>
 
-  <target name="run" depends="compile">
-    <java fork="true" classname="TuringMachine.TuringMachineApp">
-      <classpath path="${targetdir}"/>
-    </java>
-  </target>
+    <property name="jarname" value="TuringMachine4.jar" />
+
+    <!-- remove all build files -->
+	<target name="clean">
+		<delete dir="bin"/>
+        <delete file="${jarname}"/>
+	</target>
+	
+
+    <!-- build all .class files, except jUnit tests -->
+    <target name="compile">
+		<mkdir dir="bin"/>
+        <copy todir="bin/resources">
+            <fileset dir="src/resources" />
+        </copy>
+		<javac srcdir="src" destdir="bin" includeantruntime="false">
+        <compilerarg value="-Xlint:deprecation"/>
+		</javac>
+	</target>
+	
+    <!-- output executable jar file -->
+	<target name="jar" depends="compile">
+		<jar destfile="${jarname}" basedir="bin">
+			<manifest>
+	            <attribute name="Main-Class" value="TuringMachine.TuringMachineApp"/>
+                <attribute name="Class-Path" value="."/>
+			</manifest>
+		</jar>
+	</target>
+
 
 </project>

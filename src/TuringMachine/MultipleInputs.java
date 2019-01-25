@@ -1,14 +1,21 @@
 package TuringMachine;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-
-import javax.swing.*;
-
 import java.util.Vector;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 public class MultipleInputs extends JFrame {
 
@@ -22,9 +29,11 @@ public class MultipleInputs extends JFrame {
   private Thread execution;
   private Vector<JTextField> inputs;
   private Vector<JTextField> outputs;
+  private Vector<JTextField> transitions;
 
   private JLabel inLabel;
   private JLabel outLabel;
+  private JLabel transitionLabel;
   private JButton run;
   private JButton stop;
   
@@ -72,13 +81,17 @@ public class MultipleInputs extends JFrame {
 
     inLabel = new JLabel( "Inputs" );
     outLabel = new JLabel( "Outputs" );
+    transitionLabel = new JLabel("Transitions");
     inLabel.setVerticalAlignment( SwingConstants.BOTTOM );
     inLabel.setHorizontalAlignment( SwingConstants.CENTER );
     outLabel.setVerticalAlignment( SwingConstants.BOTTOM );
     outLabel.setHorizontalAlignment( SwingConstants.CENTER );
+    transitionLabel.setVerticalAlignment( SwingConstants.BOTTOM );
+    transitionLabel.setHorizontalAlignment( SwingConstants.CENTER );
 
     inputs = new Vector<JTextField>();
     outputs = new Vector<JTextField>();
+    transitions = new Vector<JTextField>();
     for( int i = 0; i < n; ++i ) {
       inputs.add( new JTextField() );
       JTextField temp2 = new JTextField("0") ;
@@ -91,6 +104,7 @@ public class MultipleInputs extends JFrame {
       temp.setHorizontalAlignment( JTextField.CENTER );
       temp.setCaretPosition(0);
       outputs.add( temp );
+      transitions.add(temp2);
     }
 
     run = new JButton( "Run" );
@@ -98,9 +112,11 @@ public class MultipleInputs extends JFrame {
 
     this.add( inLabel );
     this.add( outLabel );
+    this.add( transitionLabel );
     for( int i = 0; i < n; ++i ) {
       this.add( inputs.get( i ) );
       this.add( outputs.get( i ) );
+      this.add( transitions.get( i ) );
     }
     this.add( run );
     this.add( stop );
@@ -170,18 +186,18 @@ public class MultipleInputs extends JFrame {
 		
 	
         machine.nonBlanks = 0;
-        mp.updateLabels( machine.nonBlanks, machine.totalTransitions );
+        mp.updateLabels( machine.nonBlanks, machine.totalTransitions, machine.states.size(), machine.transitions.size());
 	
        mp.addMessage( "Tape Cleared" );
         /* LOAD INPUT STRING */
         machine.loadInputString( inputstrings.get( i ), starts.get(i)); 
         mp.addMessage( inputstrings.get( i ).concat(
             " loaded onto tape (Input " + i + ")" ) );
-        mp.updateLabels( machine.nonBlanks, machine.totalTransitions );
+        mp.updateLabels( machine.nonBlanks, machine.totalTransitions, machine.states.size(), machine.transitions.size());
         
         /* RESET MACHINE */
         for( int x = 0; x < machine.states.size(); x++ ) {
-          State n = (State)machine.states.elementAt( x );
+          State n = machine.states.elementAt( x );
           n.currentState = false;
           if( n.startState ) {
             n.currentState = true;
@@ -190,13 +206,11 @@ public class MultipleInputs extends JFrame {
         }
         machine.currentEdge = null;
         for( int x = 0; x < machine.transitions.size(); x++ ) {
-          Edge n = (Edge)machine.transitions.elementAt( x );
+          Edge n = machine.transitions.elementAt( x );
           n.currentEdge = false;
         }
         machine.totalTransitions = 0;
-        mp.updateLabels( machine.nonBlanks, machine.totalTransitions );
-       // machine.leftMost = machine.tapePos;
-        //machine.rightMost = machine.tapePos;
+        mp.updateLabels( machine.nonBlanks, machine.totalTransitions, machine.states.size(), machine.transitions.size());
         mp.addMessage( "Machine Reset" );
   
         /* RUN */
@@ -209,6 +223,7 @@ public class MultipleInputs extends JFrame {
   
         /* PRINT OUTPUT TO OUTPUT TEXTFIELDS */
         outputs.get( i ).setText( machine.printTape() );
+        transitions.get( i ).setText( String.valueOf(machine.totalTransitions));
       }
     }
     

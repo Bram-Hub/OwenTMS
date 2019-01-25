@@ -1,1 +1,0 @@
-START java TuringMachine.TuringMachineApp

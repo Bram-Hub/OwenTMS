@@ -1,8 +1,15 @@
 package TuringMachine;
 
-import javax.swing.*;
-import java.awt.event.*;
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JToggleButton;
 
 /**
  * <p>
@@ -29,7 +36,7 @@ public class GraphToolBar extends JPanel {
   private static final long serialVersionUID = 4774255986563532563L;
 
   // selection modes
-  public static int SELECT = 0, INSERTSTATE = 1, INSERTEDGE = 2, DELETE = 3,
+  public final static int SELECT = 0, INSERTSTATE = 1, INSERTEDGE = 2, DELETE = 3,
       SETSTART = 4, SETCURRENT = 5, SETHALT = 6;
 
   private JToggleButton select = new JToggleButton();
@@ -50,11 +57,11 @@ public class GraphToolBar extends JPanel {
     // setOrientation(VERTICAL);
 
     image1 = new ImageIcon( TuringMachine.TuringMachineFrame.class
-        .getResource( "select.gif" ) );
+        .getResource( "/resources/select.gif" ) );
     image2 = new ImageIcon( TuringMachine.TuringMachineFrame.class
-        .getResource( "insertstate.gif" ) );
+        .getResource( "/resources/insertstate.gif" ) );
     image3 = new ImageIcon( TuringMachine.TuringMachineFrame.class
-        .getResource( "insertedge.gif" ) );
+        .getResource( "/resources/insertedge.gif" ) );
     select.setIcon( image1 );
     select.setToolTipText( "Select" );
     insertState.setIcon( image2 );

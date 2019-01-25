@@ -1,20 +1,40 @@
 package TuringMachine;
 
-import javax.swing.JFileChooser;
-import java.io.*;
-import java.lang.*;
-import java.util.*;
-import javax.swing.*;
-import javax.swing.table.*;
-import java.awt.*;
-import java.awt.print.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PrintStream;
+import java.io.Writer;
+import java.util.Random;
+import java.util.Vector;
 
-import org.w3c.dom.*;
-import org.xml.sax.*;
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.stream.*;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Result;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * <p>Title: </p>
@@ -27,6 +47,9 @@ import javax.xml.transform.stream.*;
 
 public class TMFileChooser extends JFileChooser
 {
+
+	
+  private static final long serialVersionUID = 8973908592870498372L;
   TapePanel tapepanel;
   GraphPanel graphpanel;
   public JTextField maximum;
@@ -111,20 +134,11 @@ public class TMFileChooser extends JFileChooser
       FileOutputStream outfile = new FileOutputStream(save);
       ObjectOutputStream saver = new ObjectOutputStream(outfile);
       saver.writeObject(graphpanel.states);
-      /*saver.writeInt(graphpanel.states.size());
-      for(int j = 0; j < graphpanel.states.size(); j++)
-      {
-        State s = (State)graphpanel.states.elementAt(j);
-        saver.writeDouble(s.x);
-        saver.writeDouble(s.y);
-        saver.writeChars(s.stateName);
-        saver.writeBoolean(s.finalState);
-        saver.writeBoolean(s.startState);
-      }*/
+
       saver.writeInt(graphpanel.transitions.size());
       for(int i = 0; i < graphpanel.transitions.size(); i++)
       {
-        Edge e = (Edge)graphpanel.transitions.elementAt(i);
+        Edge e = graphpanel.transitions.elementAt(i);
         saver.writeChar(e.oldChar);
         saver.writeChar(e.newChar);
         saver.writeInt(e.direction);
@@ -161,7 +175,7 @@ public class TMFileChooser extends JFileChooser
 
       for(int j = 0; j < graphpanel.states.size(); j++)
       {
-        State temp = (State)graphpanel.states.elementAt(j);
+        State temp = graphpanel.states.elementAt(j);
         if(!temp.finalState)
         {
           saver.print(temp.stateName);
@@ -184,11 +198,11 @@ public class TMFileChooser extends JFileChooser
       else
         saver.println("/*Explicit*/");
       saver.print("start -> ");
-      saver.print(((State)graphpanel.states.elementAt(start)).stateName);
+      saver.print((graphpanel.states.elementAt(start)).stateName);
       saver.println(";");
       for(int j = 0; j < graphpanel.transitions.size(); j++)
       {
-        Edge temp = (Edge)graphpanel.transitions.elementAt(j);
+        Edge temp = graphpanel.transitions.elementAt(j);
         saver.print(temp.fromState.stateName);
         saver.print(" -> ");
         if(temp.toState.finalState)
@@ -214,10 +228,10 @@ public class TMFileChooser extends JFileChooser
         for(int j = 0; j < graphpanel.states.size(); j++)
         {
           boolean zero = false, one = false;
-          State tempState = (State)graphpanel.states.elementAt(j);
+          State tempState = graphpanel.states.elementAt(j);
           for(int i = 0; i < graphpanel.transitions.size(); i++)
           {
-            Edge tempEdge = (Edge)graphpanel.transitions.elementAt(i);
+            Edge tempEdge = graphpanel.transitions.elementAt(i);
             if(tempEdge.fromState == tempState)
             {
               if(tempEdge.oldChar == '0')
@@ -303,7 +317,7 @@ public class TMFileChooser extends JFileChooser
        root.appendChild(states);
 
        for(int j = 0; j < graphpanel.states.size(); j++){
-           State temp = (State)graphpanel.states.elementAt(j);
+           State temp = graphpanel.states.elementAt(j);
            Element e = xmldoc.createElement("State_" + temp.stateName);
            states.appendChild(e);
            Element f = xmldoc.createElement("x");
@@ -328,7 +342,7 @@ public class TMFileChooser extends JFileChooser
        root.appendChild(transitions);
 
        for(int i = 0; i < graphpanel.transitions.size(); i++){
-           Edge temp = (Edge)graphpanel.transitions.elementAt(i);
+           Edge temp = graphpanel.transitions.elementAt(i);
            Element e = xmldoc.createElement("Transition_" + Integer.toString(i));
            transitions.appendChild(e);
            Element f = xmldoc.createElement("fromstate");
@@ -382,15 +396,18 @@ public class TMFileChooser extends JFileChooser
     catch(Exception e){e.printStackTrace();}
   }
 
-  public void openFile(File open)
+@SuppressWarnings("unchecked")
+public void openFile(File open)
   {
 	  graphpanel.machine.tape.editCellAt(-1, -1);
       graphpanel.machine.tape.clearSelection();
-    try
+	  System.out.println(open.toString());
+    try (
+    	FileInputStream infile = new FileInputStream(open);
+    	ObjectInputStream opener = new ObjectInputStream(infile);
+    	)
     {
-      FileInputStream infile = new FileInputStream(open);
-      ObjectInputStream opener = new ObjectInputStream(infile);
-      graphpanel.states = (Vector)opener.readObject();
+      graphpanel.states = (Vector<State>)opener.readObject();
       int edges = opener.readInt();
       char oldChar;
       char newChar;
@@ -420,7 +437,7 @@ public class TMFileChooser extends JFileChooser
         toName = (String)opener.readObject();
         for(int i = 0; i < graphpanel.states.size(); i++)
         {
-          State temp = (State)graphpanel.states.elementAt(i);
+          State temp = graphpanel.states.elementAt(i);
           if(temp.x == fromX && temp.y == fromY && temp.stateName == fromName)
             from = temp;
           if(temp.x == toX && temp.y == toY && temp.stateName == toName)
@@ -437,14 +454,24 @@ public class TMFileChooser extends JFileChooser
       graphpanel.machine.currentState = null;
       graphpanel.machine.states = graphpanel.states;
       graphpanel.machine.transitions = graphpanel.transitions;
-      JList transitions = new JList(graphpanel.transitions);
+      JList<Edge> transitions = new JList<Edge>(graphpanel.transitions);
       transitions.setCellRenderer(new TransitionCellRenderer());
       graphpanel.transitionpanel.getViewport().setView(transitions);
       for(int k = 0; k < graphpanel.states.size(); k++)
       {
-        State temp = (State)graphpanel.states.elementAt(k);
+        State temp = graphpanel.states.elementAt(k);
         temp.currentState = false;
         temp.highlight = false;
+      }
+      if(graphpanel.transitions.size() > 0) {
+    	  Edge e = graphpanel.transitions.elementAt(0);
+    	  if(e.newChar == 0 || e.direction == TM.NULL) {
+    		  graphpanel.machine.machineType = TM.QUADRUPLE;
+    	  } else {
+    		  graphpanel.machine.machineType = TM.QUINTUPLE;
+    	  }
+      } else {
+    	  graphpanel.machine.machineType = MachineTypePicker.getNewMachineType();
       }
     }
     catch(Exception e){e.printStackTrace();}
@@ -455,9 +482,11 @@ public class TMFileChooser extends JFileChooser
 	int tempIndexOne;
 	int tempIndexTwo;
 	String tempString;
-    try
+	//Try-with-resources
+    try(
+    	BufferedReader infile = new BufferedReader(new FileReader(open))
+    )
     {
-      BufferedReader infile = new BufferedReader(new FileReader(open));
       String text;
       boolean implicit = false;
 
@@ -466,10 +495,9 @@ public class TMFileChooser extends JFileChooser
       int direction = 0;
       State from = new State(0,0,"temp",false);
       State to = new State(0,0,"temp",false);
-      int haltOffset = 0;
       boolean haltTransition = false;
 
-      graphpanel.states = new Vector();
+      graphpanel.states = new Vector<State>();
       graphpanel.transitions = new SortedListModel();
       Dimension d = graphpanel.getSize();
       Random locationGenerator = new Random();
@@ -487,16 +515,14 @@ public class TMFileChooser extends JFileChooser
       text = infile.readLine();
       if(text.endsWith("/*Implicit*/"))
          implicit = true;
-      //text = infile.readLine(); //start transition (ignored)
 
       text = infile.readLine();
       while(!text.endsWith("/*EndGraphOutput*/"))
       {
-        haltOffset = 0;
         haltTransition = false;
         if(text.indexOf("start") != -1)
         {
-          State temp = (State)graphpanel.states.elementAt(0);
+          State temp = graphpanel.states.elementAt(0);
           temp.startState = false;
           int j = 0;
           while(text.charAt(j) == ' ' || text.charAt(j) == 9)
@@ -506,7 +532,7 @@ public class TMFileChooser extends JFileChooser
 		tempIndexTwo = text.indexOf(";");
 		tempString = text.substring(tempIndexOne+2,tempIndexTwo);
 
-          temp = (State)graphpanel.states.elementAt(Integer.valueOf(tempString).intValue());
+          temp = graphpanel.states.elementAt(Integer.valueOf(tempString).intValue());
           temp.startState = true;
           text = infile.readLine();
           continue;
@@ -522,7 +548,6 @@ public class TMFileChooser extends JFileChooser
           {
             haltTransition = true;
             graphpanel.addState(locationGenerator.nextInt((int)d.getWidth()), locationGenerator.nextInt((int)d.getHeight()), String.valueOf(numStates));
-            haltOffset = 3;
           }
         }
         int j = 0;
@@ -531,15 +556,15 @@ public class TMFileChooser extends JFileChooser
 	tempIndexOne = text.indexOf("->");
 	tempIndexTwo = text.indexOf("label");
 	tempString = text.substring(0,tempIndexOne-1);
-        from = (State)graphpanel.states.elementAt(Integer.valueOf(tempString).intValue());
+        from = graphpanel.states.elementAt(Integer.valueOf(tempString).intValue());
         if(!haltTransition)
 	{
 	  tempString = text.substring(tempIndexOne+3,tempIndexTwo-2);
-          to = (State)graphpanel.states.elementAt(Integer.valueOf(tempString).intValue());
+          to = graphpanel.states.elementAt(Integer.valueOf(tempString).intValue());
 	}
         else
         {
-          to = (State)graphpanel.states.elementAt(graphpanel.states.size()-1);
+          to = graphpanel.states.elementAt(graphpanel.states.size()-1);
           to.finalState = true;
         }
         oldChar = text.charAt(tempIndexTwo+7);
@@ -570,25 +595,26 @@ public class TMFileChooser extends JFileChooser
       graphpanel.machine.currentState = null;
       graphpanel.machine.states = graphpanel.states;
       graphpanel.machine.transitions = graphpanel.transitions;
-      JList transitions = new JList(graphpanel.transitions);
+      JList<Edge> transitions = new JList<Edge>(graphpanel.transitions);
       transitions.setCellRenderer(new TransitionCellRenderer());
       graphpanel.transitionpanel.getViewport().setView(transitions);
       for(int k = 0; k < graphpanel.states.size(); k++)
       {
-        State temp = (State)graphpanel.states.elementAt(k);
+        State temp = graphpanel.states.elementAt(k);
         temp.currentState = false;
         temp.highlight = false;
       }
-
     }
     catch(Exception e){e.printStackTrace();}
+    finally {
+    }
   }
 
     public void openXMLFile(File open){
       try
       {
 
-       graphpanel.states = new Vector();
+       graphpanel.states = new Vector<State>();
        graphpanel.transitions = new SortedListModel();
        
        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -629,7 +655,7 @@ public class TMFileChooser extends JFileChooser
                             if(!childnl.item(i).getNodeName().equals("#text")){
                                 statename = childnl.item(i).getNodeName().substring(6);
                                 graphpanel.addState(x, y, statename);
-                                State temp = (State)graphpanel.states.elementAt(nodecount);
+                                State temp = graphpanel.states.elementAt(nodecount);
                                 nodecount++;
                                 if(startstate == true){
                                     temp.startState = true;
@@ -684,12 +710,12 @@ public class TMFileChooser extends JFileChooser
                             if(!childnl.item(i).getNodeName().equals("#text")){
                                 State from = null, to = null;
                                 for(int m = 0; m < graphpanel.states.size(); m++){
-                                    State temp = (State)graphpanel.states.elementAt(m);
+                                    State temp = graphpanel.states.elementAt(m);
                                     if(temp.stateName.equals(fromstate)){
-                                        from = (State)graphpanel.states.elementAt(m);
+                                        from = graphpanel.states.elementAt(m);
                                     }
                                     if(temp.stateName.equals(tostate)){
-                                        to = (State)graphpanel.states.elementAt(m);
+                                        to = graphpanel.states.elementAt(m);
                                     }
                                 }
                                 Edge insert = new Edge(from, to);
@@ -708,12 +734,12 @@ public class TMFileChooser extends JFileChooser
       graphpanel.machine.currentState = null;
       graphpanel.machine.states = graphpanel.states;
       graphpanel.machine.transitions = graphpanel.transitions;
-      JList transitions = new JList(graphpanel.transitions);
+      JList<Edge> transitions = new JList<Edge>(graphpanel.transitions);
       transitions.setCellRenderer(new TransitionCellRenderer());
       graphpanel.transitionpanel.getViewport().setView(transitions);
       for(int k = 0; k < graphpanel.states.size(); k++)
       {
-        State temp = (State)graphpanel.states.elementAt(k);
+        State temp = graphpanel.states.elementAt(k);
         temp.currentState = false;
         temp.highlight = false;
       }
@@ -729,14 +755,14 @@ public class TMFileChooser extends JFileChooser
           BufferedReader input = new BufferedReader(new FileReader(open));
           char[] cbuf = {' ', ' ', ' ', ' '};
           String inputcheck = null;
-          Vector inputs = new Vector();
+          Vector<String> inputs = new Vector<String>();
 
           inputcheck = input.readLine();
 
           if(inputcheck.equals("Tape")){
         	  double size = Double.valueOf(input.readLine());
         	  
-        	  for (int i=graphpanel.machine.TAPESIZE; i < size; i++){
+        	  for (int i=TM.TAPESIZE; i < size; i++){
         	  graphpanel.machine.tapemodel.addColumn('0', new Object[]{'0'});
         	  }
              for (int i=0; i < size; i++){
@@ -768,163 +794,3 @@ public class TMFileChooser extends JFileChooser
     }
 }
 
-class ExecutionSaver extends Thread
-{
-  public File save;
-  public int number;
-  public SaveProgressDialog saveProgressDialog;
-  GraphPanel graphpanel;
-
-  public ExecutionSaver(File save, int number, SaveProgressDialog saveProgressDialog, GraphPanel graphpanel)
-  {
-    this.save = save;
-    this.number = number;
-    this.saveProgressDialog = saveProgressDialog;
-    this.graphpanel = graphpanel;
-  }
-
-  public void saveSequence()
-  {
-	  graphpanel.machine.tape.editCellAt(-1, -1);
-      graphpanel.machine.tape.clearSelection();
-    try
-    {
-      Vector tapeStates = new Vector();
-      Vector tapePositions = new Vector();
-      Vector currentStates = new Vector();
-      int furthestLeft = graphpanel.machine.tape.getColumnCount() -1;
-      int furthestRight = 0;
-      int transitionsMade = 0;
-      for(int i = 0; i < number; i++)
-      {
-        Vector tape = new Vector();
-        for(int j = 0; j < graphpanel.machine.tape.getColumnCount(); j++)
-          tape.add(graphpanel.machine.tape.getValueAt(0,j));
-        tapeStates.add(tape);
-
-        tapePositions.add(new Integer(graphpanel.machine.leftMost));
-        tapePositions.add(new Integer(graphpanel.machine.rightMost));
-        tapePositions.add(new Integer(graphpanel.machine.tapePos));
-        if(i == 0 || graphpanel.machine.leftMost < furthestLeft)
-          furthestLeft = graphpanel.machine.leftMost;
-        if(i == 0 || graphpanel.machine.rightMost > furthestRight)
-          furthestRight = graphpanel.machine.rightMost;
-
-        if(graphpanel.machine.currentState == null)
-        {
-          if(graphpanel.machine.states.size() > 0)
-            graphpanel.machine.setState((TuringMachine.State)graphpanel.machine.states.elementAt(0));
-        }
-        currentStates.add(graphpanel.machine.currentState.stateName);
-
-
-        graphpanel.machine.transition();
-        transitionsMade = i+1;
-        if(!graphpanel.machine.go)
-          break;
-        saveProgressDialog.saveProgressBar.setValue(i);
-      }
-
-      FileOutputStream out = new FileOutputStream(save);
-      PrintStream saver = new PrintStream(out);
-
-      saver.println("<html><head><title>Turing Machine Execution</title></head><body>");
-      saver.println("<font face = Courier>");
-
-      for(int i = 0; i < transitionsMade; i++)
-      {
-        boolean print = false;
-        Vector temp = (Vector)tapeStates.elementAt(i);
-        Integer tempLeft = (Integer)tapePositions.elementAt(i*3);
-        Integer tempRight = (Integer)tapePositions.elementAt(i*3 + 1);
-        Integer tempPos = (Integer)tapePositions.elementAt(i*3 + 2);
-        for(int j = furthestLeft; j <= furthestRight; j++)
-        {
-          if(j == tempPos.intValue())
-            saver.print("<b>");
-          if(print)
-          {
-            if(j <= tempRight.intValue())
-              saver.print(((Character)temp.elementAt(j)).charValue());
-            else
-              saver.print("&nbsp;");
-          }
-          else if(((Character)temp.elementAt(j)).charValue() != graphpanel.machine.DEFAULTCHAR ||
-                  tempLeft.intValue() == j)
-          {
-              print = true;
-              if(j <= tempRight.intValue())
-                saver.print(((Character)temp.elementAt(j)).charValue());
-              else
-                saver.print("&nbsp;");
-          }
-          else
-            saver.print("&nbsp;");
-          if(j == tempPos.intValue())
-            saver.print("</b>");
-        }
-        saver.print("&nbsp;&nbsp;State ");
-        saver.print((String)currentStates.elementAt(i));
-        saver.println("<br>");
-        saveProgressDialog.saveProgressBar.setValue(2*number -transitionsMade + i);
-      }
-      saver.println("</font></body></html>");
-      saver.flush();
-      saver.close();
-      saveProgressDialog.dispose();
-    }
-    catch(Exception e){e.printStackTrace();}
-  }
-
-  public void run()
-  {
-    saveSequence();
-  }
-}
-
-class SaveProgressDialog extends JDialog
-{
-  public JProgressBar saveProgressBar;
-  public JLabel indicator;
-
-  public SaveProgressDialog(int number, Frame owner)
-  {
-    super(owner);
-    saveProgressBar = new JProgressBar(0,number*2);
-    indicator = new JLabel("Saving Execution Sequence...");
-    Container myPane = getContentPane();
-    GridLayout myLayout = new GridLayout(2,1);
-    myPane.setLayout(myLayout);
-    myPane.add(indicator);
-    myPane.add(saveProgressBar);
-    setSize(200, 100);
-    center();
-    setTitle("Save Progress");
-    repaint();
-  }
-
-  public void center()
-  {
-    Dimension screenSize =
-        Toolkit.getDefaultToolkit().getScreenSize();
-    int screenWidth = screenSize.width;
-    int screenHeight = screenSize.height;
-
-    Dimension frameSize = this.getSize();
-    int x = (screenWidth - frameSize.width)/2;
-    int y = (screenHeight - frameSize.height)/2;
-
-    if (x < 0)
-    {
-      x = 0;
-      frameSize.width = screenWidth;
-    }
-
-    if (y < 0)
-    {
-      y = 0;
-      frameSize.height = screenHeight;
-    }
-    this.setLocation(x, y);
-  }
-}

@@ -5,7 +5,9 @@ Owen Kellett
 2010:
 Scott Tritten  
 2012:
-Christopher French
+Christopher French  
+2015:
+Chris Brenon
 
 ## About
 This is a turing machine simulation software created by RPI students.
@@ -14,12 +16,68 @@ How to use:
 Save:   Saves transitions, with X,Y positions  (automatically adds .tm extension)
 Save Graph: Saves transitions, without X,Y positions (automatically adds .tmo extension)
 
-## Installation
-Build instructions:
-The program can be compiled and run using ant.  
-In this directory, simply execute:
+## Planned Changes
+- ~~Reset / rewrite machine button~~
+- ~~disable quadruple machine field when one is filled~~
+- ~~fix numbering system~~
+    - ~~reorganize right-hand window~~
+- ~~don't pop window when node is inserted~~
+    - ~~add ability to double click to change node name~~
+- ~~Create new Turing Machine~~
+- ~~Show number of states and transitions~~
+- ~~Show number transitions when doing multiple inputs~~
+- ~~Only allow for user to select TM type when a new TM is created~~
+    - ~~Automatically detect TM type when opening machine~~
+- ~~Allow user to open Turing Machine file from command-line~~
+- ~~Change "New TM" to clear, and give a "New TM" option that opens a new window~~
+- ~~Fix behavior when user presses the close button on a pop-up~~
+- ~~Allow user to select TM type on command-line~~
+- shortcut buttons
+- Allow for user to create comments
+- Allow for user to rectangularly select nodes & transitions
+- Allow for user to copy and paste nodes and transitions
+- Disable modification of tape while TM is running
+- Documentation
+- Add JUnit testing
 
-ant run
+## Installation
+Build instructions: 
+this project uses Ant to create an executable .jar file
+
+From command-line:
+Run java -jar TuringMachine4.jar [input file] [-type=quad|quint]
+From the command line, the user can select an input file, as well as the type of machine to open.
+Also, you can run java -jar TuringMachine4.jar -h to get these usage instructions.
+
+Otherwise, if you drag an input file onto the .jar or .bat file (on windows), the software will open with that TM file.
+
+
+---VERSION 4.0 RELEASE NOTES--------------------------------------
+New Features:
+- Added a Reset All button to the menu to reset, clear tape, and load the input tape.
+- When working with a quadruple machine, each field (new state and move direction) disables the other field when it changes from NULL, so the user knows that they can't enter both.
+- When a node is inserted, no window pops up asking for the node name, allowing for quicker placement of nodes.
+- If a node is double clicked in select mode, its name can be changed.
+- The umber of states and transitions is shown on the bottom of the screen
+- Program asks for quadruple or quintuple machine at the very start - removes dropdown inside
+- Allow user to determine type at command-line
+- Allow user to specify input file at command-line
+- Add option to open new window with "New" in file menu
+- Allow user to clear current TM with "Clear" option in file menu
+
+Bugfixes:
+- When nodes are created, they find the lowest unused number as their name
+- Two nodes cannot both have the same name
+
+Known bugs:
+- If a file is saved when the zoom is not 0, the nodes will have their location saved as their apparent location, rather than absolute location.
+- Count of states is not updated until next action is taken when a node is deleted
+
+Additional feature ideas:
+- Ability to add comments to the drawing area
+- Allow for mass copy-pasting and deleting of nodes and transitions
+- Add shortcut buttons (for saving, changing modes, etc)
+
 
 ---VERSION 3.0 RELEASE NOTES--------------------------------------
     Changed Save Tape to save more than 1000 characters if the tape has been extended.

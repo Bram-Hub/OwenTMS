@@ -1,9 +1,23 @@
 package TuringMachine;
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import java.io.*;
+import java.awt.AWTEvent;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.util.Vector;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
 /**
  * Main visual holder component
@@ -11,7 +25,9 @@ import java.io.*;
  * @version 1.0
  */
 public class TuringMachineFrame extends JFrame {
-  /**
+
+  private static final long serialVersionUID = -3383177807569442195L;
+/**
    * Helper variable for the contentPane of this
    */
   private JPanel contentPane;
@@ -23,6 +39,14 @@ public class TuringMachineFrame extends JFrame {
    * File menu for the main menu bar
    */
   private JMenu jMenuFile = new JMenu();
+  /**
+   * New Option for the File menu
+   */
+  private JMenuItem jMenuFileNew = new JMenuItem();
+  /**
+   * Clear Option for the File menu
+   */
+  private JMenuItem jMenuFileClear = new JMenuItem();
   /**
    * Exit option for the File menu
    */
@@ -70,13 +94,26 @@ public class TuringMachineFrame extends JFrame {
   /**
    * The guts of the program - the main TM simulator
    */
-  TuringMachineSimulator machine = new TuringMachineSimulator();
+  TuringMachineSimulator machine;
+  
+  TuringMachineApp parent;
 
   /**
    * Construct the frame
    */
-  public TuringMachineFrame() {
+  public TuringMachineFrame(TuringMachineApp tma, File file, int machineType) {
+
+	parent = tma;
     enableEvents(AWTEvent.WINDOW_EVENT_MASK);
+	machine = new TuringMachineSimulator();
+	if(machineType > 0) {
+		machine.machine.machineType = machineType;
+	}
+	if(file != null) {
+		openFile(file);
+	} else if(machineType == 0) {
+		machine.machine.machineType = MachineTypePicker.getNewMachineType();
+	}
     try {
       jbInit();
     }
@@ -84,13 +121,16 @@ public class TuringMachineFrame extends JFrame {
       e.printStackTrace();
     }
   }
+  
+  public TuringMachineFrame(TuringMachineApp tma) {
+	  this(tma,null,0);
+  }
 
   /**
    * Component intialization
    */
   public void jbInit() throws Exception  {
 
-    //setIconImage(Toolkit.getDefaultToolkit().createImage(TuringMachineFrame.class.getResource("[Your Icon]")));
     contentPane = (JPanel) this.getContentPane();
     contentPane.setLayout(borderLayout1);
     this.setSize(new Dimension(800, 600));
@@ -103,6 +143,18 @@ public class TuringMachineFrame extends JFrame {
     jMenuFileExit.addActionListener(new ActionListener()  {
       public void actionPerformed(ActionEvent e) {
         jMenuFileExit_actionPerformed(e);
+      }
+    });
+    jMenuFileNew.setText("New");
+    jMenuFileNew.addActionListener(new ActionListener() {
+    	public void actionPerformed(ActionEvent e) {
+    		parent.createNewInstance(null);
+    	}
+    });
+    jMenuFileClear.setText("Clear");
+    jMenuFileClear.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        jMenuFileClear_actionPerformed(e);
       }
     });
     jMenuFileOpen.setText("Open");
@@ -156,6 +208,8 @@ public class TuringMachineFrame extends JFrame {
     });
 
     //add menu components to menu
+    jMenuFile.add(jMenuFileNew);
+    jMenuFile.add(jMenuFileClear);
     jMenuFile.add(jMenuFileOpen);
     jMenuFile.add(jMenuFileSave);
     jMenuFile.add(jMenuFileSaveGraph);
@@ -169,20 +223,31 @@ public class TuringMachineFrame extends JFrame {
     jMenuBar1.add(jMenuHelp);
     this.setJMenuBar(jMenuBar1);
 
-    //contentPane.add(graphtoolbar, BorderLayout.NORTH);
     contentPane.add(statusBar, BorderLayout.SOUTH);
     contentPane.add(machine, BorderLayout.CENTER);
-    //contentPane.add(graphpanel, BorderLayout.CENTER);
-    //contentPane.add(tapepanel, BorderLayout.SOUTH);
-    //graphpanel.start();
+
   }
   /**
    * File | Exit action - exits the program
    * @param e ActionEvent dummy variable
    */
   public void jMenuFileExit_actionPerformed(ActionEvent e) {
-    System.exit(0);
+	parent.close();
+    dispose();
   }
+
+  public void jMenuFileClear_actionPerformed(ActionEvent e) {
+      machine.graphpanel.states = new Vector<State>();
+      machine.graphpanel.transitions = new SortedListModel();
+      machine.graphpanel.machine.currentEdge = null;
+      machine.graphpanel.machine.currentState = null;
+      JList<Edge> transitions = new JList<Edge>(machine.graphpanel.transitions);
+      transitions.setCellRenderer(new TransitionCellRenderer());
+      machine.graphpanel.transitionpanel.getViewport().setView(transitions);
+      machine.machine.machineType = MachineTypePicker.getNewMachineType();
+
+  }
+
 
   /**
    * File | Open action - brings up a TMFileChooser dialog
@@ -194,16 +259,22 @@ public class TuringMachineFrame extends JFrame {
     int confirm = filechooser.showOpenDialog(this);
     if(confirm == TMFileChooser.APPROVE_OPTION)
     {
-      filechooser.curdir = filechooser.getCurrentDirectory().toString();
-      if(filechooser.getSelectedFile().getName().endsWith("tm"))
-        filechooser.openFile(filechooser.getSelectedFile());
-      else if(filechooser.getSelectedFile().getName().endsWith("tmo"))
-        filechooser.openTMOFile(filechooser.getSelectedFile());
-      else if(filechooser.getSelectedFile().getName().endsWith("txt"))
-        filechooser.openTapeFile(filechooser.getSelectedFile());
-      else
-          filechooser.openXMLFile(filechooser.getSelectedFile());
+    	openFile(filechooser.getSelectedFile());
     }
+    
+  }
+  
+  public void openFile(File file) {
+	  TMFileChooser filechooser = new TMFileChooser();
+	  filechooser.setGraphPanel(machine.graphpanel);
+	  if(file.getName().endsWith("tm"))
+	    filechooser.openFile(file);
+	  else if(file.getName().endsWith("tmo"))
+	    filechooser.openTMOFile(file);
+	  else if(file.getName().endsWith("txt"))
+	    filechooser.openTapeFile(file);
+	  else
+	    filechooser.openXMLFile(file);
   }
   /**
    * File | Save action - brings up a TMFileChooser dialog
@@ -215,7 +286,7 @@ public class TuringMachineFrame extends JFrame {
     int confirm = filechooser.showSaveDialog(this);
     if(confirm == TMFileChooser.APPROVE_OPTION)
     {
-      filechooser.curdir = filechooser.getCurrentDirectory().toString();
+      TMFileChooser.curdir = filechooser.getCurrentDirectory().toString();
       File newSelect;
       File select = filechooser.getSelectedFile();
       if(select.getName().endsWith(".tm"))
@@ -250,7 +321,7 @@ public class TuringMachineFrame extends JFrame {
     int confirm = filechooser.showSaveDialog(this);
     if(confirm == TMFileChooser.APPROVE_OPTION)
     {
-      filechooser.curdir = filechooser.getCurrentDirectory().toString();
+      TMFileChooser.curdir = filechooser.getCurrentDirectory().toString();
       File newSelect;
       File select = filechooser.getSelectedFile();
       if(select.getName().endsWith(".tmo"))
@@ -281,7 +352,7 @@ public class TuringMachineFrame extends JFrame {
     int confirm = filechooser.showSaveDialog(this);
     if(confirm == TMFileChooser.APPROVE_OPTION)
     {
-      filechooser.curdir = filechooser.getCurrentDirectory().toString();
+      TMFileChooser.curdir = filechooser.getCurrentDirectory().toString();
       File newSelect;
       File select = filechooser.getSelectedFile();
       if(select.getName().endsWith(".xml"))
@@ -312,7 +383,7 @@ public class TuringMachineFrame extends JFrame {
     int confirm = filechooser.showSaveDialog(this);
     if(confirm == TMFileChooser.APPROVE_OPTION)
     {
-      filechooser.curdir = filechooser.getCurrentDirectory().toString();
+      TMFileChooser.curdir = filechooser.getCurrentDirectory().toString();
       File newSelect;
       File select = filechooser.getSelectedFile();
       if(select.getName().endsWith(".txt"))
@@ -343,7 +414,7 @@ public class TuringMachineFrame extends JFrame {
     int confirm = filechooser.showSaveDialog(this);
     if(confirm == TMFileChooser.APPROVE_OPTION)
     {
-      filechooser.curdir = filechooser.getCurrentDirectory().toString();
+      TMFileChooser.curdir = filechooser.getCurrentDirectory().toString();
       File newSelect;
       File select = filechooser.getSelectedFile();
       if(select.getName().endsWith(".txt"))
@@ -378,7 +449,7 @@ public class TuringMachineFrame extends JFrame {
     int confirm = filechooser.showSaveDialog(this);
     if(confirm == TMFileChooser.APPROVE_OPTION)
     {
-      filechooser.curdir = filechooser.getCurrentDirectory().toString();
+      TMFileChooser.curdir = filechooser.getCurrentDirectory().toString();
       File newSelect;
       File select = filechooser.getSelectedFile();
       if(select.getName().endsWith(".html"))
@@ -394,7 +465,7 @@ public class TuringMachineFrame extends JFrame {
           case JOptionPane.YES_OPTION :
             SaveProgressDialog progressIndicator = new SaveProgressDialog(Integer.valueOf(filechooser.maximum.getText()).intValue(), this);
             progressIndicator.validate();
-            progressIndicator.show();
+            progressIndicator.setVisible(true);
             machine.machine.setSpeed("Compute");
             ExecutionSaver saveNow = new ExecutionSaver(newSelect, Integer.valueOf(filechooser.maximum.getText()).intValue(), progressIndicator, machine.graphpanel);
             saveNow.start();
@@ -407,7 +478,7 @@ public class TuringMachineFrame extends JFrame {
       {
         SaveProgressDialog progressIndicator = new SaveProgressDialog(Integer.valueOf(filechooser.maximum.getText()).intValue(), this);
         progressIndicator.validate();
-        progressIndicator.show();
+        progressIndicator.setVisible(true);
         machine.machine.setSpeed("Compute");
         ExecutionSaver saveNow = new ExecutionSaver(newSelect, Integer.valueOf(filechooser.maximum.getText()).intValue(), progressIndicator, machine.graphpanel);
         saveNow.start();
@@ -427,11 +498,11 @@ public class TuringMachineFrame extends JFrame {
     dlg.setLocation((frmSize.width - dlgSize.width) / 2 + loc.x, (frmSize.height - dlgSize.height) / 2 + loc.y);
     dlg.setModal(true);
     dlg.pack();
-    dlg.show();
+    dlg.setVisible(true);
   }
 
   /**
-    * Overridden so we can exit when window is closed
+    * Overridden so we can exit when window is closed (if this is last window)
     */
   protected void processWindowEvent(WindowEvent e) {
     super.processWindowEvent(e);
