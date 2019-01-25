@@ -2,6 +2,7 @@ package TuringMachine;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyListener;
 
 /**
  * Holding component which houses all visual components of the actual simulator
@@ -129,7 +130,7 @@ public class TuringMachineSimulator extends JPanel {
     // tapepanel.initGraphics();
     graphpanel.start();
     // tapepanel.start();
-    tapepanel.getHorizontalScrollBar().setMaximum( TM.TAPESIZE * 10 );
-    tapepanel.getHorizontalScrollBar().setValue( TM.TAPESIZE * 5 );
+    tapepanel.getHorizontalScrollBar().setMaximum( TM.TAPESIZE * 14 );
+    tapepanel.getHorizontalScrollBar().setValue( TM.TAPESIZE * 7 );
   }
 }

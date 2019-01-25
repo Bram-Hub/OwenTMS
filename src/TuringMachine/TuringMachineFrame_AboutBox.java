@@ -34,7 +34,7 @@ public class TuringMachineFrame_AboutBox extends JDialog implements
   private FlowLayout flowLayout1 = new FlowLayout();
   private GridLayout gridLayout1 = new GridLayout();
   private String product = "Turing Machine Simulator";
-  private String version = "Version 2.0";
+  private String version = "Version 3.0";
   private String copyright = "Copyright (c) 2002-2003";
   private String comments = "Owen F. Kellett";
 

@@ -151,16 +151,14 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
         RenderingHints.VALUE_ANTIALIAS_ON );
     g.setRenderingHint( RenderingHints.KEY_STROKE_CONTROL,
         RenderingHints.VALUE_STROKE_PURE );
-    if( Math.abs( e.shiftLabel ) > Math.abs( e.fromState.x - e.toState.x ) )
+    if( Math.abs( e.shiftLabel ) > 50 )
       e.shiftLabel = 0;
     int x1 = (int)e.fromState.x;
     int y1 = (int)e.fromState.y;
     int xtemp2 = (int)e.toState.x;
-    int x2 = xtemp2 - (int)e.shiftLabel;
+    int x2 = xtemp2;
     int ytemp2 = (int)e.toState.y;
-    double ytemp22 = (float)ytemp2 + e.shiftLabel
-        * ( ( (float)y1 - (float)e.toState.y ) / ( (float)xtemp2 - (float)x1 ) );
-    int y2 = (int)ytemp22;
+    int y2 = ytemp2;
     String label = e.label();
     int w = fm.stringWidth( label ) + 5;
     int h = fm.getHeight();
@@ -195,34 +193,43 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
       for( j = 0; j < transitions.size(); j++ ) {
         Edge temp = (Edge)transitions.elementAt( j );
         if( temp == e ) break;
-        if( ( temp.fromState == e.fromState && temp.toState == e.toState )
-            || ( temp.toState == e.fromState && temp.fromState == e.toState ) )
+        if(  temp.fromState == e.fromState && temp.toState == e.toState  )
           line = false;
       }
-      if( line ) g.drawLine( x1, y1, xtemp2, (int)ytemp2 );
+     if( line ) {
+      QuadCurve2D q = new QuadCurve2D.Float();
+      
+      
+      q.setCurve(x1, y1, (x1+xtemp2)/2 - (y1-ytemp2)/Math.sqrt(1+len/10), (y1+ytemp2)/2 + (x1-xtemp2)/Math.sqrt(1+len/10), xtemp2, ytemp2);
+      g.draw(q); }
+      
+     int curvx = (int) ((x1+x2)/2 - (y1-y2)/Math.sqrt(1+len/10));
+     int curvy = (int) ((y1+y2)/2 + (x1-x2)/Math.sqrt(1+len/10));
+     int avex = curvePoint(x1, curvx, x2, (e.shiftLabel+50)/100);
+     int avey = curvePoint(y1, curvy, y2, (e.shiftLabel+50)/100);
+      
       g.setColor( Color.yellow );
       if( e.highlight ) g.setColor( selectedEdgeColor );
       if( e.currentEdge ) g.setColor( currentEdgeColor );
-      g.fillRect( x1 + ( x2 - x1 ) / 2 - w / 2, y1 + ( y2 - y1 ) / 2 - h / 2,
-          w, h );
+      
+      g.fillRect( avex - w / 2, avey  - h / 2, w, h );     
       g.setColor( Color.black );
-      g.drawRect( x1 + ( x2 - x1 ) / 2 - w / 2, y1 + ( y2 - y1 ) / 2 - h / 2,
+      g.drawRect( avex - w / 2, avey - h / 2,
           w, h );
-      g.drawString( label, x1 + ( x2 - x1 ) / 2 - ( w - 5 ) / 2, y1
-          + ( y2 - y1 ) / 2 - h / 2 + fm.getAscent() );
+      g.drawString( label, avex  - ( w - 5 ) / 2, avey - h / 2 + fm.getAscent() );
 
       int xs[], ys[];
       if( x1 > x2 ) {
-        xs = new int[] { x1 + ( x2 - x1 ) / 2 - w / 2 - 4,
-            x1 + ( x2 - x1 ) / 2 - w / 2 - 17, x1 + ( x2 - x1 ) / 2 - w / 2 - 4 };
-        ys = new int[] { y1 + ( y2 - y1 ) / 2 - h / 2, y1 + ( y2 - y1 ) / 2,
-            y1 + ( y2 - y1 ) / 2 + h / 2 };
+        xs = new int[] { avex  - w / 2 - 4,
+        		avex - w / 2 - 17, avex - w / 2 - 4 };
+        ys = new int[] { avey - h / 2, avey,
+        		avey + h / 2 };
       }
       else {
-        xs = new int[] { x1 + ( x2 - x1 ) / 2 + w / 2 + 4,
-            x1 + ( x2 - x1 ) / 2 + w / 2 + 17, x1 + ( x2 - x1 ) / 2 + w / 2 + 4 };
-        ys = new int[] { y1 + ( y2 - y1 ) / 2 - h / 2, y1 + ( y2 - y1 ) / 2,
-            y1 + ( y2 - y1 ) / 2 + h / 2 };
+        xs = new int[] { avex  + w / 2 + 4,
+        		avex + w / 2 + 17, avex  + w / 2 + 4 };
+        ys = new int[] { avey - h / 2, avey,
+        		avey + h / 2 };
       }
       g.setColor( Color.yellow );
       g.fillPolygon( xs, ys, 3 );
@@ -372,16 +379,12 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
             if( pickEdge.fromState.x < pickEdge.toState.x ) {
               if( e.getX() > pickEdge.fromState.x
                   && e.getX() < pickEdge.toState.x )
-                pickEdge.shiftLabel = ( pickEdge.fromState.x
-                    + ( pickEdge.toState.x - pickEdge.fromState.x ) / 2 - e
-                    .getX() ) * 2;
+                pickEdge.shiftLabel = ((e.getX() - pickEdge.fromState.x ) / ( pickEdge.toState.x - pickEdge.fromState.x ) * 100 -50);
             }
             else {
               if( e.getX() < pickEdge.fromState.x
                   && e.getX() > pickEdge.toState.x )
-                pickEdge.shiftLabel = ( pickEdge.fromState.x
-                    + ( pickEdge.toState.x - pickEdge.fromState.x ) / 2 - e
-                    .getX() ) * 2;
+                pickEdge.shiftLabel = -((e.getX() - pickEdge.toState.x ) / ( pickEdge.fromState.x - pickEdge.toState.x ) * 100 -50);
             }
             break;
           }
@@ -462,13 +465,11 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
       if( pickEdge != null ) {
         if( pickEdge.fromState.x < pickEdge.toState.x ) {
           if( e.getX() > pickEdge.fromState.x && e.getX() < pickEdge.toState.x )
-            pickEdge.shiftLabel = ( pickEdge.fromState.x
-                + ( pickEdge.toState.x - pickEdge.fromState.x ) / 2 - e.getX() ) * 2;
+            pickEdge.shiftLabel = ((e.getX() - pickEdge.fromState.x ) / ( pickEdge.toState.x - pickEdge.fromState.x ) * 100 -50);
         }
         else {
           if( e.getX() < pickEdge.fromState.x && e.getX() > pickEdge.toState.x )
-            pickEdge.shiftLabel = ( pickEdge.fromState.x
-                + ( pickEdge.toState.x - pickEdge.fromState.x ) / 2 - e.getX() ) * 2;
+            pickEdge.shiftLabel = -((e.getX() - pickEdge.toState.x ) / ( pickEdge.fromState.x - pickEdge.toState.x ) * 100 -50);
         }
         pickEdge = null;
       }
@@ -509,13 +510,11 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
       if( pickEdge != null ) {
         if( pickEdge.fromState.x < pickEdge.toState.x ) {
           if( e.getX() > pickEdge.fromState.x && e.getX() < pickEdge.toState.x )
-            pickEdge.shiftLabel = ( pickEdge.fromState.x
-                + ( pickEdge.toState.x - pickEdge.fromState.x ) / 2 - e.getX() ) * 2;
+            pickEdge.shiftLabel = ((e.getX() - pickEdge.fromState.x ) / ( pickEdge.toState.x - pickEdge.fromState.x ) * 100 -50);
         }
         else {
           if( e.getX() < pickEdge.fromState.x && e.getX() > pickEdge.toState.x )
-            pickEdge.shiftLabel = ( pickEdge.fromState.x
-                + ( pickEdge.toState.x - pickEdge.fromState.x ) / 2 - e.getX() ) * 2;
+            pickEdge.shiftLabel = -((e.getX() - pickEdge.toState.x ) / ( pickEdge.fromState.x - pickEdge.toState.x ) * 100 -50);
         }
       }
     }
@@ -589,13 +588,19 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
       else return false;
     }
     int xtemp2 = (int)e.toState.x;
-    int x2 = xtemp2 - (int)e.shiftLabel;
+    int x2 = xtemp2;
     int ytemp2 = (int)e.toState.y;
-    double ytemp22 = (float)ytemp2 + e.shiftLabel
-        * ( ( (float)y1 - (float)e.toState.y ) / ( (float)xtemp2 - (float)x1 ) );
-    int y2 = (int)ytemp22;
-    if( x > x1 + ( x2 - x1 ) / 2 - w / 2 && x < x1 + ( x2 - x1 ) / 2 + w / 2
-        && y > y1 + ( y2 - y1 ) / 2 - h / 2 && y < y1 + ( y2 - y1 ) / 2 + h / 2 )
+    int y2 = ytemp2;
+    int len = (int)Math.abs( Math.sqrt( ( x1 - xtemp2 ) * ( x1 - xtemp2 )
+            + ( y1 - ytemp2 ) * ( y1 - ytemp2 ) ) );
+    int curvx = (int) ((x1+x2)/2 - (y1-y2)/Math.sqrt(1+len/10));
+    int curvy = (int) ((y1+y2)/2 + (x1-x2)/Math.sqrt(1+len/10));
+    int avex = curvePoint(x1, curvx, x2, (e.shiftLabel+50)/100);
+    int avey = curvePoint(y1, curvy, y2, (e.shiftLabel+50)/100);
+    
+    
+    if( x > avex - w / 2 && x < avex + w / 2
+        && y > avey - h / 2 && y < avey + h / 2 )
       return true;
     return false;
   }
@@ -712,6 +717,16 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
         this.repaint();
       }
     }
+  }
+  
+  public int curvePoint(int p0, int p1, int p2, double offset)
+  {
+	  double offset1 = offset;
+	  if(offset > .95)
+		  offset1 = .95;
+	  if(offset < .05)
+		  offset1 = .05;
+	  return (int) ((1-offset1)*((1-offset1)*p0 + offset1*p1) + offset1*((1-offset1)*p1 + offset1*p2)) ;
   }
 
   public void start() {

@@ -2,7 +2,6 @@ package TuringMachine;
 
 import javax.swing.JFileChooser;
 import java.io.*;
-import java.lang.Exception;
 import java.lang.*;
 import java.util.*;
 import javax.swing.*;
@@ -247,8 +246,11 @@ public class TMFileChooser extends JFileChooser
       try
       {
           Writer output = new BufferedWriter(new FileWriter(save));
+          graphpanel.machine.tape.editCellAt(-1, -1);
+          graphpanel.machine.tape.clearSelection();
           output.write("Tape\n");
-          for(int j = 0; j < graphpanel.machine.TAPESIZE; j++)
+          output.write(graphpanel.machine.tape.getColumnCount() + "\n");
+          for(int j = 0; j < graphpanel.machine.tape.getColumnCount(); j++)
             output.write(String.valueOf(graphpanel.machine.tape.getValueAt(0,j)));
           output.write(String.valueOf(graphpanel.machine.tapePos));
           output.close();
@@ -373,6 +375,8 @@ public class TMFileChooser extends JFileChooser
 
   public void openFile(File open)
   {
+	  graphpanel.machine.tape.editCellAt(-1, -1);
+      graphpanel.machine.tape.clearSelection();
     try
     {
       FileInputStream infile = new FileInputStream(open);
@@ -721,8 +725,12 @@ public class TMFileChooser extends JFileChooser
           inputcheck = input.readLine();
 
           if(inputcheck.equals("Tape")){
-
-             for (int i=0; i < graphpanel.machine.TAPESIZE; i++){
+        	  double size = Double.valueOf(input.readLine());
+        	  
+        	  for (int i=graphpanel.machine.TAPESIZE; i < size; i++){
+        	  graphpanel.machine.tapemodel.addColumn('0', new Object[]{'0'});
+        	  }
+             for (int i=0; i < size; i++){
               input.read(cbuf, 0, 1);
               graphpanel.machine.tape.setValueAt(new Character(cbuf[0]), 0, i);
              }
@@ -768,18 +776,20 @@ class ExecutionSaver extends Thread
 
   public void saveSequence()
   {
+	  graphpanel.machine.tape.editCellAt(-1, -1);
+      graphpanel.machine.tape.clearSelection();
     try
     {
       Vector tapeStates = new Vector();
       Vector tapePositions = new Vector();
       Vector currentStates = new Vector();
-      int furthestLeft = graphpanel.machine.TAPESIZE -1;
+      int furthestLeft = graphpanel.machine.tape.getColumnCount() -1;
       int furthestRight = 0;
       int transitionsMade = 0;
       for(int i = 0; i < number; i++)
       {
         Vector tape = new Vector();
-        for(int j = 0; j < graphpanel.machine.TAPESIZE; j++)
+        for(int j = 0; j < graphpanel.machine.tape.getColumnCount(); j++)
           tape.add(graphpanel.machine.tape.getValueAt(0,j));
         tapeStates.add(tape);
 

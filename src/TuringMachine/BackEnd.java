@@ -98,6 +98,8 @@ class TM implements Runnable {
   public static final int NULL = 0, LEFT = 1, RIGHT = 2, STAY = 3;
   // tapesize
   public static final int TAPESIZE = 1000;
+  // tape cell size
+  public static final int CELLSIZE = 15;
   public static final char DEFAULTCHAR = '0';
   public static final int QUADRUPLE = 4, QUINTUPLE = 5;
 
@@ -111,7 +113,7 @@ class TM implements Runnable {
   // interior components
   int speed;
   TapeTableModel tapemodel = new TapeTableModel();
-  JTable tape;
+  TapeTable tape;
   int tapePos;
   int leftMost;
   int rightMost;
@@ -119,7 +121,6 @@ class TM implements Runnable {
   int initNonBlanks, nonBlanks;
   int totalTransitions;
   int moving;
-
   // references to exterior components
   State currentState;
   Edge currentEdge;
@@ -135,6 +136,8 @@ class TM implements Runnable {
     initMachine( TAPESIZE / 2, "", new StringBuffer( "" ) );
     // tapepanel.getViewport().setView(tape);
   }
+  
+  
 
   /*
    * public void setTape(TapePanel tape) { // display = tape; }
@@ -187,7 +190,7 @@ class TM implements Runnable {
   }
 
   public boolean validTapeChar( char ch ) {
-    return( miscUtil.isLetterOrDigit( ch ) || " +/*-!@#$%^&()=,.".indexOf( ch ) > -1 );
+    return( miscUtil.isLetterOrDigit( ch ) || " +/*-!@#$%&()=,.[]".indexOf( ch ) > -1 );
   }
 
   @SuppressWarnings( "unchecked" )
@@ -206,20 +209,26 @@ class TM implements Runnable {
     Vector tapeData2 = new Vector();
     tapeData2.add( tapeData );
     tapemodel.setDataVector( tapeData2, tapeIndicator );
-    tape = new JTable( tapemodel );
+    tape = new TapeTable( tapemodel , this);
     tape.setAutoResizeMode( JTable.AUTO_RESIZE_OFF );
+    tape.getTableHeader().setReorderingAllowed(false);
+    //tape.setAutoCreateColumnsFromModel(false);
     for( int j = 0; j < TAPESIZE; j++ ) {
       TableColumn col = tape.getColumnModel().getColumn( j );
-      col.setMinWidth( 10 );
-      col.setMaxWidth( 15 );
-      col.setPreferredWidth( 11 );
-      col.setHeaderRenderer( new TapeCellRenderer() );
+      col.setResizable(false);
+      col.setMinWidth( CELLSIZE );
+      col.setMaxWidth( CELLSIZE );
+      col.setPreferredWidth( CELLSIZE );
+      col.setCellRenderer(new TapeCellRenderer() );
+      col.setCellEditor(new TapeEditor());
+      col.setHeaderRenderer( new TapeHeaderRenderer() );
     }
 
     tapePos = initPos;
     leftMost = initPos;
     rightMost = initPos;
     tape.scrollRectToVisible( tape.getCellRect( 0, tapePos - 5, true ) );
+    tape.scrollRectToVisible( tape.getCellRect( 0, tapePos + 5, true ) );
     initNonBlanks = 0;
     /*
      * for (int i=0; i < numChars; i++) { c = initChars.charAt(i); if (c == '_')
@@ -234,7 +243,14 @@ class TM implements Runnable {
     return true;
   }
 
-  public void loadInputString( String input ) {
+  public void loadInputString( String input, int startPos ) {
+	  for( int j = 0; j < tape.getColumnCount(); j++ ) {
+          tape.getColumnModel().getColumn( j ).setHeaderValue(
+        		  new Character( '0' ) );
+        }
+	  tape.getColumnModel().getColumn( tapePos + startPos ).setHeaderValue(
+	          new Character( '-' ) );
+	  
     for( int j = 0; j < input.length(); j++ ) {
       if( input.charAt( j ) != '0'
           && ( (Character)tape.getValueAt( 0, tapePos + j ) ).charValue() == '0' )
@@ -246,10 +262,12 @@ class TM implements Runnable {
     }
     leftMost = tapePos;
     rightMost = tapePos + input.length() - 1;
+    tapePos += startPos;
+    tape.getTableHeader().repaint();
   }
 
   // Returns a string representing what is on the tape (not including
-  // infinite 0's on eiter end)
+  // infinite 0's on either end)
   public String printTape() {
     String output = new String();
     String temp;
@@ -263,17 +281,10 @@ class TM implements Runnable {
 
   public void scrollTape( int dir ) {
     if( dir == LEFT ) {
-      if( tapePos == 20 ) {
+      if( tapePos <= 20 ) {
         for( int j = 0; j < TAPESIZE; j++ ) {
-          TableColumn col = new TableColumn();
-          col.setMinWidth( 10 );
-          col.setMaxWidth( 15 );
-          col.setPreferredWidth( 11 );
-          col.setHeaderValue( new Character( '0' ) );
-          col.setHeaderRenderer( new TapeCellRenderer() );
-          tape.addColumn( col );
+          tapemodel.addColumn('0', new Object[]{'0'});
           tape.moveColumn( tape.getColumnCount() - 1, 0 );
-          tape.setValueAt( new Character( '0' ), 0, 0 );
         }
         tapePos += TAPESIZE;
         leftMost += TAPESIZE;
@@ -290,16 +301,9 @@ class TM implements Runnable {
       if( tapePos < leftMost ) leftMost = tapePos;
     }
     else if( dir == RIGHT ) {
-      if( tapePos == tape.getColumnCount() - 20 ) {
+      if( tapePos >= tape.getColumnCount() - 20 ) {
         for( int j = 0; j < TAPESIZE; j++ ) {
-          TableColumn col = new TableColumn();
-          col.setMinWidth( 10 );
-          col.setMaxWidth( 15 );
-          col.setPreferredWidth( 11 );
-          col.setHeaderRenderer( new TapeCellRenderer() );
-          col.setHeaderValue( new Character( '0' ) );
-          tape.addColumn( col );
-          tape.setValueAt( new Character( '0' ), 0, tape.getColumnCount() - 1 );
+          tapemodel.addColumn('0', new Object[]{'0'});
         }
       }
       tape.getColumnModel().getColumn( tapePos ).setHeaderValue(
@@ -317,6 +321,7 @@ class TM implements Runnable {
   public void run() {
     // reachedHaltingState = true;
     go = true;
+    tape.setEnabled(false);
     while ( go ) {
       if( speed == SLOW )
         try {
@@ -339,6 +344,7 @@ class TM implements Runnable {
     }
     clearEdge();
     moving = STAY;
+    tape.setEnabled(true);
     // display.repaint();
   }
 

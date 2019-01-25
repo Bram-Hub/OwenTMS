@@ -89,8 +89,10 @@ public class MessagePanel extends JPanel {
         .valueOf( 0 ) ) );
     totaltransitions = new JLabel( new String( "Transitions Made: " )
         .concat( String.valueOf( 0 ) ) );
-    JLabel machineTypeLabel = new JLabel( "Machine Type" );
+    JLabel machineTypeLabel = new JLabel( "Machine Type:", JLabel.RIGHT );
+
     inputString = new JTextField();
+    inputString.setToolTipText("Use [ ] to indicate starting position");
     machineType = new JComboBox();
     machineType.addItem( "Quadruple Machine" );
     machineType.addItem( "Quintuple Machine" );
@@ -100,8 +102,8 @@ public class MessagePanel extends JPanel {
     optionspanel.add( totaltransitions );
     optionspanel.add( clearTape );
     optionspanel.add( nonblanks );
-    optionspanel.add( machineType );
     optionspanel.add( machineTypeLabel );
+    optionspanel.add( machineType );
     optionspanel.add( loadInput );
     optionspanel.add( inputString );
     optionspanel.add( multipleInputs );
@@ -139,6 +141,8 @@ public class MessagePanel extends JPanel {
 
     start.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
+    	 machine.tape.editCellAt(-1, -1);
+    	 machine.tape.clearSelection();
         if( execution.isAlive() )
           addMessage( "Already running" );
         else {
@@ -166,6 +170,7 @@ public class MessagePanel extends JPanel {
           }
           machine.clearEdge();
           machine.moving = TM.STAY;
+          machine.tape.setEnabled(true);
           // tapeDisplay.repaint();
           addMessage( "User interrupt\nMachine halted" );
         }
@@ -201,27 +206,89 @@ public class MessagePanel extends JPanel {
         }
         machine.totalTransitions = 0;
         updateLabels( machine.nonBlanks, machine.totalTransitions );
-        machine.leftMost = machine.tapePos;
-        machine.rightMost = machine.tapePos;
+//        machine.leftMost = machine.tapePos;
+//        machine.rightMost = machine.tapePos;
         addMessage( "Machine Reset" );
       }
     } );
 
     clearTape.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
-        for( int j = 0; j < machine.tape.getColumnCount(); j++ ) {
+     	 machine.tape.editCellAt(-1, -1);
+     	 machine.tape.clearSelection();
+	  for( int j = 0; j < machine.tape.getColumnCount(); j++ ) {
           machine.tape.setValueAt( new Character( '0' ), 0, j );
+          machine.tape.getColumnModel().getColumn( j ).setHeaderValue(
+        		  new Character( '0' ) );
         }
+	
+			
+		machine.tape.getColumnModel().getColumn( machine.tape.getColumnCount()/2 ).setHeaderValue(
+		          new Character( '-' ) );
+		machine.tape.getTableHeader().repaint();
+		machine.tapePos = machine.tape.getColumnCount()/2;
+		machine.tape.scrollRectToVisible( machine.tape.getCellRect( 0, machine.tapePos - 5, true ) );
+		machine.tape.scrollRectToVisible( machine.tape.getCellRect( 0, machine.tapePos + 5, true ) );
+		
+	
         machine.nonBlanks = 0;
         updateLabels( machine.nonBlanks, machine.totalTransitions );
+	
         addMessage( "Tape Cleared" );
       }
     } );
 
     loadInput.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
-        machine.loadInputString( inputString.getText() );
-        addMessage( inputString.getText().concat( " loaded onto tape" ) );
+    	  int left = 0;
+    	  int leftpos = -1;
+    	  int right = 0;
+    	  int rightpos = -1;
+    	  int start;
+    	  String temp1;
+    	  String input = inputString.getText();
+      	 machine.tape.editCellAt(-1, -1);
+      	 machine.tape.clearSelection();
+    	for(int i = 0; i < input.length(); i++)
+    	{
+    		if(!machine.validTapeChar(input.charAt(i)))
+    		{
+    			addMessage( "Tape input contains invalid characters" );
+    			return;
+    		}
+    		if(input.charAt(i) == '[')
+    		{
+    			left++;
+    			if(leftpos < 0)
+    				leftpos = i;
+    		}
+    		if(input.charAt(i) == ']')
+    		{
+    			right++;
+    			if(rightpos < 0)
+    				rightpos = i;
+    		}
+    	}
+    	if(!((left == 0 && right == 0) || (left == 1 && right == 1)))
+    	{
+    		addMessage( "Impropper use of []" );
+    		return;
+    	}
+    	if(left == 0)
+    		start = 0;
+    	else
+    	{
+    		if(rightpos - leftpos != 2)
+    		{
+    			addMessage( "Impropper use of []" );
+    			return;
+    		}
+    		start = leftpos;
+    		temp1 = input.substring(0,leftpos) + input.substring(leftpos+1, rightpos) + input.substring(rightpos+1);
+    		input = temp1;
+    	}
+        machine.loadInputString( input, start);
+        addMessage( input.concat( " loaded onto tape" ) );
         updateLabels( machine.nonBlanks, machine.totalTransitions );
       }
     } );
@@ -232,6 +299,8 @@ public class MessagePanel extends JPanel {
      */
     multipleInputs.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
+      	machine.tape.editCellAt(-1, -1);
+      	machine.tape.clearSelection();
         miWindow.setMachine( machine );
         miWindow.setThread( execution );
         miWindow.setVisible( true );
@@ -258,7 +327,7 @@ public class MessagePanel extends JPanel {
   }
 
   public void updateLabels( int nonBlankChars, int transitions ) {
-    nonblanks.setText( new String( "Non 0's on Tape: " ).concat( String
+    nonblanks.setText( new String( " Non 0's on Tape: " ).concat( String
         .valueOf( nonBlankChars ) ) );
     totaltransitions.setText( new String( "Transitions Made: " ).concat( String
         .valueOf( transitions ) ) );
