@@ -1,26 +1,27 @@
 package TuringMachine;
 
 import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.event.*;
 import java.awt.event.*;
 import java.util.*;
 import java.awt.*;
-import javax.swing.*;
+import java.awt.geom.*;
 import java.lang.Math;
 
 /**
- * <p>Title: </p>
- * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2002</p>
- * <p>Company: </p>
+ * Title: Description: Copyright: Copyright (c) 2002 Company:
+ * 
  * @author unascribed
  * @version 1.0
  */
 
-public class GraphPanel extends JPanel
-    implements Runnable, MouseListener, MouseMotionListener
-{
-  //interior components
-  Vector states = new Vector(100);
+public class GraphPanel extends JPanel implements Runnable, MouseListener,
+    MouseMotionListener, MouseWheelListener, ChangeListener {
+
+  private static final long serialVersionUID = -4396915196603152278L;
+  // interior components
+  Vector<State> states = new Vector<State>( 100 );
   SortedListModel transitions = new SortedListModel();
   State pick, tempState1, tempState2;
   Edge tempEdge, pickEdge;
@@ -31,61 +32,67 @@ public class GraphPanel extends JPanel
 
   Thread go;
 
-  //references to exterior components
+  // references to exterior components
   GraphToolBar graphtoolbar;
   MessagePanel messagepanel;
   TransitionsPane transitionpanel;
   TM machine;
+  JSlider zoomSlider;
 
-  public GraphPanel(GraphToolBar graphtoolbar)
-  {
-    addMouseListener(this);
-    addMouseMotionListener(this);
+  private int zoomLevel = 0;
+  private int minZoomLevel = -10;
+  private int maxZoomLevel = 10;
+  private double zoomMultiplicationFactor = 1.1;
+
+  private Point dragStartScreen;
+  private Point dragEndScreen;
+
+  private int h = 26;
+  private int w = 26;
+  
+  public GraphPanel( GraphToolBar graphtoolbar ) {
+    addMouseListener( this );
+    addMouseMotionListener( this );
+    addMouseWheelListener( this );
     this.graphtoolbar = graphtoolbar;
   }
 
-  public void setMessagePanel(MessagePanel messagepanel)
-  {
+  public void setMessagePanel( MessagePanel messagepanel ) {
     this.messagepanel = messagepanel;
   }
 
-  public void setTransitionPanel(TransitionsPane transitionpanel)
-  {
+  public void setTransitionPanel( TransitionsPane transitionpanel ) {
     this.transitionpanel = transitionpanel;
   }
-  public void setMachine(TM machine)
-  {
+
+  public void setMachine( TM machine ) {
     this.machine = machine;
   }
-
-  public void run()
-  {
+  
+  public void setSlider( JSlider slider ) {
+    this.zoomSlider = slider;    
+  }
+  
+  public void run() {
     Thread me = Thread.currentThread();
-    while(me == go)
-    {
+    while ( me == go ) {
       repaint();
-      try
-      {
-        Thread.sleep(100);
+      try {
+        Thread.sleep( 100 );
       }
-      catch (InterruptedException e)
-      {
+      catch ( InterruptedException e ) {
         break;
       }
     }
   }
 
-  void addState(double x, double y, String name)
-  {
-    states.addElement(new State(x,y,name,false));
+  void addState( double x, double y, String name ) {
+    states.addElement( new State( x, y, name, false ) );
   }
 
-  void addEdge(State from, State to)
-  {
-    transitions.addElement(new Edge(from, to));
+  void addEdge( State from, State to ) {
+    transitions.addElement( new Edge( from, to ) );
   }
-
-
 
   final Color stateColor = Color.white;
   final Color selectedStateColor = Color.orange;
@@ -96,319 +103,309 @@ public class GraphPanel extends JPanel
   final Color selectedEdgeColor = Color.red;
   final Color currentEdgeColor = Color.green;
 
-  public void paintNode(Graphics g, State n, FontMetrics fm)
-  {
+  public void paintNode( Graphics g1, State n, FontMetrics fm ) {
+    Graphics2D g = (Graphics2D)g1;
+    g.setRenderingHint( RenderingHints.KEY_ANTIALIASING,
+        RenderingHints.VALUE_ANTIALIAS_ON );
+    g.setRenderingHint( RenderingHints.KEY_STROKE_CONTROL,
+        RenderingHints.VALUE_STROKE_PURE );
+
     int x = (int)n.x;
     int y = (int)n.y;
-    if(n == pick)
-      g.setColor(selectedStateColor);
-    else if(n.currentState)
-      g.setColor(currentStateColor);
-    else
-      g.setColor(stateColor);
-    if(n.highlight)
-      g.setColor(highlightStateColor);
-    int w = fm.stringWidth(n.stateName) + 10;
-    int h = fm.getHeight() + 10;
-    g.fillOval(x - w/2, y - h / 2, w, h);
-    g.setColor(Color.black);
-    g.drawOval(x - w/2, y - h / 2, w, h);
-    g.drawString(n.stateName, x - (w-10)/2, (y - (h-8)/2) + fm.getAscent());
-    if(n.finalState)
-      g.drawOval(x - w/2 + 3, y - h/2 + 3, w-6, h-6);
-    if(n.startState)
-    {
-      g.setColor(Color.yellow);
+    if( n == pick )
+      g.setColor( selectedStateColor );
+    else if( n.currentState )
+      g.setColor( currentStateColor );
+    else g.setColor( stateColor );
+    if( n.highlight ) g.setColor( highlightStateColor );
+
+    int stringWidth = fm.stringWidth( n.stateName );
+    int w2 = w;
+    if( stringWidth > w )
+      w2 += stringWidth;
+    //h = w;
+    Ellipse2D state = new Ellipse2D.Double( x - w2 / 2, y - h / 2, w2, h );
+    g.fill( state );
+    g.setColor( Color.black );
+    g.setStroke( new BasicStroke( 1 ) );
+    g.draw( state );
+    g.drawString( n.stateName, (int)state.getCenterX() - stringWidth / 2,
+        (int)state.getCenterY() + fm.getAscent() / 2 );
+
+    if( n.finalState )
+      g.drawOval( x - w2 / 2 + 3, y - h / 2 + 3, w2 - 6, h - 6 );
+    if( n.startState ) {
+      g.setColor( Color.yellow );
       int xs[], ys[];
-      xs = new int[] {x - w/2, x - w/2 - 10, x - w/2 - 10};
-      ys = new int[] {y, y-h/3, y+h/3};
-      g.fillPolygon(xs, ys, 3);
-      g.setColor(Color.black);
-      g.drawPolygon(xs, ys, 3);
+      xs = new int[] { x - w2 / 2, x - w2 / 2 - 10, x - w2 / 2 - 10 };
+      ys = new int[] { y, y - h / 3, y + h / 3 };
+      g.fillPolygon( xs, ys, 3 );
+      g.setColor( Color.black );
+      g.drawPolygon( xs, ys, 3 );
     }
   }
 
-  public void paintEdge(Graphics g, Edge e, FontMetrics fm)
-  {
-    if(Math.abs(e.shiftLabel) > Math.abs(e.fromState.x - e.toState.x))
+  public void paintEdge( Graphics g1, Edge e, FontMetrics fm ) {
+    Graphics2D g = (Graphics2D)g1;
+    g.setRenderingHint( RenderingHints.KEY_ANTIALIASING,
+        RenderingHints.VALUE_ANTIALIAS_ON );
+    g.setRenderingHint( RenderingHints.KEY_STROKE_CONTROL,
+        RenderingHints.VALUE_STROKE_PURE );
+    if( Math.abs( e.shiftLabel ) > Math.abs( e.fromState.x - e.toState.x ) )
       e.shiftLabel = 0;
     int x1 = (int)e.fromState.x;
     int y1 = (int)e.fromState.y;
     int xtemp2 = (int)e.toState.x;
     int x2 = xtemp2 - (int)e.shiftLabel;
     int ytemp2 = (int)e.toState.y;
-    double ytemp22 = (float)ytemp2 + e.shiftLabel*(((float)y1-(float)e.toState.y)/((float)xtemp2-(float)x1));
+    double ytemp22 = (float)ytemp2 + e.shiftLabel
+        * ( ( (float)y1 - (float)e.toState.y ) / ( (float)xtemp2 - (float)x1 ) );
     int y2 = (int)ytemp22;
     String label = e.label();
-    int w = fm.stringWidth(label) + 5;
+    int w = fm.stringWidth( label ) + 5;
     int h = fm.getHeight();
-    int len = (int)Math.abs(Math.sqrt((x1-xtemp2)*(x1-xtemp2) + (y1-ytemp2)*(y1-ytemp2)));
-    if(e.currentEdge)
-      g.setColor(currentEdgeColor);
-    else
-      g.setColor(edgeColor);
+    int len = (int)Math.abs( Math.sqrt( ( x1 - xtemp2 ) * ( x1 - xtemp2 )
+        + ( y1 - ytemp2 ) * ( y1 - ytemp2 ) ) );
+    if( e.currentEdge )
+      g.setColor( currentEdgeColor );
+    else g.setColor( edgeColor );
 
-    if(len == 0)
-    {
+    if( len == 0 ) {
       int j = 0;
       int total = 0;
-      for(j = 0; j < transitions.size(); j++)
-      {
-        Edge temp = (Edge)transitions.elementAt(j);
-        if(temp == e)
-          break;
-        if(temp.fromState == e.fromState && temp.fromState == temp.toState)
+      for( j = 0; j < transitions.size(); j++ ) {
+        Edge temp = (Edge)transitions.elementAt( j );
+        if( temp == e ) break;
+        if( temp.fromState == e.fromState && temp.fromState == temp.toState )
           total += h + 2;
       }
-      if(total == 0)
-        g.drawOval(x1 - 10, y1 - 50, 20, 50);
-      g.setColor(Color.yellow);
-      if(e.highlight)
-        g.setColor(selectedEdgeColor);
-      if(e.currentEdge)
-        g.setColor(currentEdgeColor);
-      g.fillRect(x1 - w/2, y1 - 50 - h/2 - total, w, h);
-      g.setColor(Color.black);
-      g.drawRect(x1 - w/2, y1 - 50 - h/2 - total, w, h);
-      g.drawString(label, x1 - (w-5)/2, (y1 - 50 - (h)/2) - total + fm.getAscent());
+      if( total == 0 ) g.drawOval( x1 - 10, y1 - 50, 20, 50 );
+      g.setColor( Color.yellow );
+      if( e.highlight ) g.setColor( selectedEdgeColor );
+      if( e.currentEdge ) g.setColor( currentEdgeColor );
+      g.fillRect( x1 - w / 2, y1 - 50 - h / 2 - total, w, h );
+      g.setColor( Color.black );
+      g.drawRect( x1 - w / 2, y1 - 50 - h / 2 - total, w, h );
+      g.drawString( label, x1 - ( w - 5 ) / 2, ( y1 - 50 - ( h ) / 2 ) - total
+          + fm.getAscent() );
     }
-    else
-    {
+    else {
       int j = 0;
       boolean line = true;
-      for(j = 0; j < transitions.size(); j++)
-      {
-        Edge temp = (Edge)transitions.elementAt(j);
-        if(temp == e)
-          break;
-        if((temp.fromState == e.fromState && temp.toState == e.toState) ||
-           (temp.toState == e.fromState && temp.fromState == e.toState))
+      for( j = 0; j < transitions.size(); j++ ) {
+        Edge temp = (Edge)transitions.elementAt( j );
+        if( temp == e ) break;
+        if( ( temp.fromState == e.fromState && temp.toState == e.toState )
+            || ( temp.toState == e.fromState && temp.fromState == e.toState ) )
           line = false;
       }
-      if(line)
-        g.drawLine(x1, y1, xtemp2, (int)ytemp2);
-      g.setColor(Color.yellow);
-      if(e.highlight)
-        g.setColor(selectedEdgeColor);
-      if(e.currentEdge)
-        g.setColor(currentEdgeColor);
-      g.fillRect(x1 + (x2-x1)/2 - w/2, y1 + (y2-y1)/2 - h/2, w, h);
-      g.setColor(Color.black);
-      g.drawRect(x1 + (x2-x1)/2 - w/2, y1 + (y2-y1)/2 - h/2, w, h);
-      g.drawString(label, x1 + (x2-x1)/2 - (w-5)/2, y1 + (y2-y1)/2 - h/2 + fm.getAscent());
+      if( line ) g.drawLine( x1, y1, xtemp2, (int)ytemp2 );
+      g.setColor( Color.yellow );
+      if( e.highlight ) g.setColor( selectedEdgeColor );
+      if( e.currentEdge ) g.setColor( currentEdgeColor );
+      g.fillRect( x1 + ( x2 - x1 ) / 2 - w / 2, y1 + ( y2 - y1 ) / 2 - h / 2,
+          w, h );
+      g.setColor( Color.black );
+      g.drawRect( x1 + ( x2 - x1 ) / 2 - w / 2, y1 + ( y2 - y1 ) / 2 - h / 2,
+          w, h );
+      g.drawString( label, x1 + ( x2 - x1 ) / 2 - ( w - 5 ) / 2, y1
+          + ( y2 - y1 ) / 2 - h / 2 + fm.getAscent() );
 
       int xs[], ys[];
-      if(x1 > x2)
-      {
-        xs = new int[] {x1 + (x2-x1)/2 - w/2 - 4, x1 + (x2-x1)/2 - w/2 - 17, x1 + (x2-x1)/2 - w/2 - 4};
-        ys = new int[] {y1 + (y2-y1)/2 - h/2, y1 + (y2-y1)/2, y1 + (y2-y1)/2 + h/2};
+      if( x1 > x2 ) {
+        xs = new int[] { x1 + ( x2 - x1 ) / 2 - w / 2 - 4,
+            x1 + ( x2 - x1 ) / 2 - w / 2 - 17, x1 + ( x2 - x1 ) / 2 - w / 2 - 4 };
+        ys = new int[] { y1 + ( y2 - y1 ) / 2 - h / 2, y1 + ( y2 - y1 ) / 2,
+            y1 + ( y2 - y1 ) / 2 + h / 2 };
       }
-      else
-      {
-        xs = new int[] {x1 + (x2-x1)/2 + w/2 + 4, x1 + (x2-x1)/2 + w/2 + 17, x1 + (x2-x1)/2 + w/2 + 4};
-        ys = new int[] {y1 + (y2-y1)/2 - h/2, y1 + (y2-y1)/2, y1 + (y2-y1)/2 + h/2};
+      else {
+        xs = new int[] { x1 + ( x2 - x1 ) / 2 + w / 2 + 4,
+            x1 + ( x2 - x1 ) / 2 + w / 2 + 17, x1 + ( x2 - x1 ) / 2 + w / 2 + 4 };
+        ys = new int[] { y1 + ( y2 - y1 ) / 2 - h / 2, y1 + ( y2 - y1 ) / 2,
+            y1 + ( y2 - y1 ) / 2 + h / 2 };
       }
-      g.setColor(Color.yellow);
-      g.fillPolygon(xs, ys, 3);
-      g.setColor(Color.black);
-      g.drawPolygon(xs, ys, 3);
+      g.setColor( Color.yellow );
+      g.fillPolygon( xs, ys, 3 );
+      g.setColor( Color.black );
+      g.drawPolygon( xs, ys, 3 );
     }
   }
 
-  //public synchronized void update(Graphics g)
-  public synchronized void paint(Graphics g)
-  {
+  public synchronized void paint( Graphics g1 ) {
+    Graphics2D g = (Graphics2D)g1;
+    g.setRenderingHint( RenderingHints.KEY_ANTIALIASING,
+        RenderingHints.VALUE_ANTIALIAS_ON );
+    g.setRenderingHint( RenderingHints.KEY_STROKE_CONTROL,
+        RenderingHints.VALUE_STROKE_PURE );
     Dimension d = getSize();
-    if ((offscreen == null) || (d.width != offscreensize.width) || (d.height != offscreensize.height)) {
-      offscreen = createImage(d.width, d.height);
+
+    if( ( offscreen == null ) || ( d.width != offscreensize.width )
+        || ( d.height != offscreensize.height ) ) {
+      offscreen = createImage( d.width, d.height );
       offscreensize = d;
       offgraphics = offscreen.getGraphics();
-      offgraphics.setFont(getFont());
     }
+    offgraphics.setFont( getFont() );
 
-    offgraphics.setColor(getBackground());
-    offgraphics.fillRect(0, 0, d.width, d.height);
+    offgraphics.setColor( getBackground() );
+    offgraphics.fillRect( 0, 0, d.width, d.height );
     FontMetrics fm = offgraphics.getFontMetrics();
-    for (int i = 0 ; i < transitions.size(); i++)
-    {
-      Edge e = (Edge)transitions.elementAt(i);
-      paintEdge(offgraphics, e, fm);
+    for( int i = 0; i < transitions.size(); i++ ) {
+      Edge e = (Edge)transitions.elementAt( i );
+      paintEdge( offgraphics, e, fm );
     }
 
-
-    for (int i = 0 ; i < states.size() ; i++)
-    {
-      paintNode(offgraphics, (State)states.elementAt(i), fm);
+    for( int i = 0; i < states.size(); i++ ) {
+      paintNode( offgraphics, (State)states.elementAt( i ), fm );
     }
-    g.drawImage(offscreen, 0, 0, null);
+    g.drawImage( offscreen, 0, 0, null );
   }
 
-  //MouseListener events
-  public void mouseClicked(MouseEvent e)
-  {
-    if(graphtoolbar.selectionMode == graphtoolbar.SELECT && e.getClickCount() == 2)
-    {
+  // MouseListener events
+  public void mouseClicked( MouseEvent e ) {
+    if( graphtoolbar.selectionMode == GraphToolBar.SELECT
+        && e.getClickCount() == 2 ) {
       int x = e.getX();
       int y = e.getY();
-      for(int i = 0; i < transitions.size(); i++)
-      {
-        Edge m = (Edge)transitions.elementAt(i);
-        if(mouseInEdge(m, x, y))
-        {
-          NewTransitionDialog newTransition = new NewTransitionDialog(m, transitions, (String)messagepanel.machineType.getSelectedItem(), true, transitionpanel);
+      for( int i = 0; i < transitions.size(); i++ ) {
+        Edge m = (Edge)transitions.elementAt( i );
+        if( mouseInEdge( m, x, y ) ) {
+          NewTransitionDialog newTransition = new NewTransitionDialog( m,
+              transitions, (String)messagepanel.machineType.getSelectedItem(),
+              true, transitionpanel );
           newTransition.pack();
           newTransition.center();
           newTransition.validate();
-          newTransition.show();
+          newTransition.setVisible( true );
         }
       }
     }
-    if(graphtoolbar.selectionMode == graphtoolbar.DELETE && e.getClickCount() == 1)
-    {
+    if( graphtoolbar.selectionMode == GraphToolBar.DELETE
+        && e.getClickCount() == 1 ) {
       int x = e.getX();
       int y = e.getY();
       State destroy = null;
-      for (int i = 0 ; i < states.size(); i++)
-      {
-        State n = (State)states.elementAt(i);
-        if(mouseIn(n,x,y))
-        {
+      for( int i = 0; i < states.size(); i++ ) {
+        State n = (State)states.elementAt( i );
+        if( mouseIn( n, x, y ) ) {
           destroy = n;
         }
       }
-      for(int i = 0; i < transitions.size(); i++)
-      {
-        Edge m = (Edge)transitions.elementAt(i);
-        if(m.fromState.equals(destroy) || m.toState.equals(destroy))
-        {
-          transitions.removeElementAt(i);
+      for( int i = 0; i < transitions.size(); i++ ) {
+        Edge m = (Edge)transitions.elementAt( i );
+        if( m.fromState.equals( destroy ) || m.toState.equals( destroy ) ) {
+          transitions.removeElementAt( i );
           i--;
         }
       }
-      if(destroy != null)
-        states.removeElement(destroy);
-      else
-      {
+      if( destroy != null )
+        states.removeElement( destroy );
+      else {
         Edge gone = null;
-        for(int i = 0; i < transitions.size(); i++)
-        {
-          Edge n = (Edge)transitions.elementAt(i);
-          if(mouseInEdge(n,x,y))
-            gone = n;
+        for( int i = 0; i < transitions.size(); i++ ) {
+          Edge n = (Edge)transitions.elementAt( i );
+          if( mouseInEdge( n, x, y ) ) gone = n;
         }
-        if(gone != null)
-          transitions.removeElement(gone);
+        if( gone != null ) transitions.removeElement( gone );
         gone = null;
       }
       destroy = null;
     }
-    if(graphtoolbar.selectionMode == graphtoolbar.SETSTART)
-    {
+    if( graphtoolbar.selectionMode == GraphToolBar.SETSTART ) {
       int x = e.getX();
       int y = e.getY();
-      for (int i = 0 ; i < states.size(); i++)
-      {
-        State n = (State)states.elementAt(i);
-        if(mouseIn(n,x,y))
-        {
-          for(int j = 0; j < states.size(); j++)
-            ((State)states.elementAt(j)).startState = false;
+      for( int i = 0; i < states.size(); i++ ) {
+        State n = (State)states.elementAt( i );
+        if( mouseIn( n, x, y ) ) {
+          for( int j = 0; j < states.size(); j++ )
+            ( (State)states.elementAt( j ) ).startState = false;
           n.startState = true;
         }
       }
     }
-    if(graphtoolbar.selectionMode == graphtoolbar.SETCURRENT)
-    {
+    if( graphtoolbar.selectionMode == GraphToolBar.SETCURRENT ) {
       int x = e.getX();
       int y = e.getY();
-      for (int i = 0 ; i < states.size(); i++)
-      {
-        State n = (State)states.elementAt(i);
-        if(mouseIn(n,x,y))
-        {
-          for(int j = 0; j < states.size(); j++)
-            ((State)states.elementAt(j)).currentState = false;
+      for( int i = 0; i < states.size(); i++ ) {
+        State n = (State)states.elementAt( i );
+        if( mouseIn( n, x, y ) ) {
+          for( int j = 0; j < states.size(); j++ )
+            ( (State)states.elementAt( j ) ).currentState = false;
           n.currentState = true;
           machine.currentState = n;
           machine.clearEdge();
         }
       }
     }
-    if(graphtoolbar.selectionMode == graphtoolbar.SETHALT)
-    {
+    if( graphtoolbar.selectionMode == GraphToolBar.SETHALT ) {
       int x = e.getX();
       int y = e.getY();
-      for (int i = 0 ; i < states.size(); i++)
-      {
-        State n = (State)states.elementAt(i);
-        if(mouseIn(n,x,y))
-        {
-          if(n.finalState)
+      for( int i = 0; i < states.size(); i++ ) {
+        State n = (State)states.elementAt( i );
+        if( mouseIn( n, x, y ) ) {
+          if( n.finalState )
             n.finalState = false;
-          else
-            n.finalState = true;
+          else n.finalState = true;
         }
       }
     }
   }
 
-  public void mousePressed(MouseEvent e)
-  {
-    if(graphtoolbar.selectionMode == graphtoolbar.SELECT)
-    {
+  public void mousePressed( MouseEvent e ) {
+    if( graphtoolbar.selectionMode == GraphToolBar.SELECT ) {
       int x = e.getX();
       int y = e.getY();
-      for (int i = 0 ; i < states.size(); i++)
-      {
-        State n = (State)states.elementAt(i);
-        if(mouseIn(n,x,y))
-        {
+      for( int i = 0; i < states.size(); i++ ) {
+        State n = (State)states.elementAt( i );
+        if( mouseIn( n, x, y ) ) {
           pick = n;
           pick.x = x;
           pick.y = y;
+          break;
         }
       }
-      if(pick == null)
-      {
-        for(int i = 0; i < transitions.size(); i++)
-        {
-          Edge n = (Edge)transitions.elementAt(i);
-          if(mouseInEdge(n, x, y))
-          {
+      if( pick == null ) {
+        for( int i = 0; i < transitions.size(); i++ ) {
+          Edge n = (Edge)transitions.elementAt( i );
+          if( mouseInEdge( n, x, y ) ) {
             pickEdge = n;
-            if(pickEdge.fromState.x < pickEdge.toState.x)
-            {
-              if(e.getX() > pickEdge.fromState.x && e.getX() < pickEdge.toState.x)
-                pickEdge.shiftLabel =
-                (pickEdge.fromState.x + (pickEdge.toState.x - pickEdge.fromState.x)/2 - e.getX())*2;
+            if( pickEdge.fromState.x < pickEdge.toState.x ) {
+              if( e.getX() > pickEdge.fromState.x
+                  && e.getX() < pickEdge.toState.x )
+                pickEdge.shiftLabel = ( pickEdge.fromState.x
+                    + ( pickEdge.toState.x - pickEdge.fromState.x ) / 2 - e
+                    .getX() ) * 2;
             }
-            else
-            {
-              if(e.getX() < pickEdge.fromState.x && e.getX() > pickEdge.toState.x)
-               pickEdge.shiftLabel =
-                (pickEdge.fromState.x + (pickEdge.toState.x - pickEdge.fromState.x)/2 - e.getX())*2;
+            else {
+              if( e.getX() < pickEdge.fromState.x
+                  && e.getX() > pickEdge.toState.x )
+                pickEdge.shiftLabel = ( pickEdge.fromState.x
+                    + ( pickEdge.toState.x - pickEdge.fromState.x ) / 2 - e
+                    .getX() ) * 2;
             }
+            break;
           }
         }
+        if( pickEdge == null ) {
+          dragStartScreen = e.getPoint();
+          dragEndScreen = null;
+          setCursor( new Cursor( Cursor.MOVE_CURSOR ) );
+        }
       }
     }
-    else if(graphtoolbar.selectionMode == graphtoolbar.INSERTSTATE)
-    {
-      addState(e.getX(), e.getY(), String.valueOf(states.size()));
+    else if( graphtoolbar.selectionMode == GraphToolBar.INSERTSTATE ) {
+      addState( e.getX(), e.getY(), String.valueOf( states.size() ) );
       pick = (State)states.lastElement();
     }
-    else if(graphtoolbar.selectionMode == graphtoolbar.INSERTEDGE)
-    {
+    else if( graphtoolbar.selectionMode == GraphToolBar.INSERTEDGE ) {
       int x = e.getX();
       int y = e.getY();
-      for (int i = 0 ; i < states.size(); i++)
-      {
-        State n = (State)states.elementAt(i);
-        if(mouseIn(n,x,y))
-        {
+      for( int i = 0; i < states.size(); i++ ) {
+        State n = (State)states.elementAt( i );
+        if( mouseIn( n, x, y ) ) {
           tempState1 = n;
-          tempState2 = new State(e.getX(), e.getY(), "Temp", false);
-          addEdge(tempState1, tempState2);
+          tempState2 = new State( e.getX(), e.getY(), "Temp", false );
+          addEdge( tempState1, tempState2 );
         }
       }
     }
@@ -416,74 +413,63 @@ public class GraphPanel extends JPanel
     e.consume();
   }
 
-  public void mouseReleased(MouseEvent e)
-  {
-    if(graphtoolbar.selectionMode == graphtoolbar.INSERTEDGE)
-    {
-      if(tempState2 != null)
-      {
+  public void mouseReleased( MouseEvent e ) {
+    if( graphtoolbar.selectionMode == GraphToolBar.INSERTEDGE ) {
+      if( tempState2 != null ) {
         int x = e.getX();
         int y = e.getY();
         int i;
         Edge current = (Edge)transitions.lastElement();
-        for (i = 0 ; i < states.size(); i++)
-        {
-          State n = (State)states.elementAt(i);
-          if(mouseIn(n,x,y))
-          {
+        for( i = 0; i < states.size(); i++ ) {
+          State n = (State)states.elementAt( i );
+          if( mouseIn( n, x, y ) ) {
             current.toState = n;
-            NewTransitionDialog newTransition = new NewTransitionDialog(current, transitions, (String)messagepanel.machineType.getSelectedItem(), false, transitionpanel);
+            NewTransitionDialog newTransition = new NewTransitionDialog(
+                current, transitions, (String)messagepanel.machineType
+                    .getSelectedItem(), false, transitionpanel );
             newTransition.pack();
             newTransition.center();
             newTransition.validate();
-            newTransition.show();
+            newTransition.setVisible( true );
             break;
           }
         }
-        if(i == states.size())
-        {
-          transitions.removeElement(current);
+        if( i == states.size() ) {
+          transitions.removeElement( current );
         }
         tempState1 = null;
         tempState2 = null;
       }
     }
-    else if(graphtoolbar.selectionMode == graphtoolbar.INSERTSTATE)
-    {
-      if(pick != null)
-      {
+    else if( graphtoolbar.selectionMode == GraphToolBar.INSERTSTATE ) {
+      if( pick != null ) {
         pick.x = e.getX();
         pick.y = e.getY();
-        NewStateDialog newState = new NewStateDialog(pick, states);
+        NewStateDialog newState = new NewStateDialog( pick, states );
         newState.pack();
         newState.center();
         newState.validate();
-        newState.show();
+        newState.setVisible( true );
         pick = null;
       }
     }
-    else
-    {
-      if(pick != null)
-      {
+    else {
+      if( pick != null ) {
         pick.x = e.getX();
         pick.y = e.getY();
         pick = null;
       }
-      if(pickEdge != null)
-      {
-        if(pickEdge.fromState.x < pickEdge.toState.x)
-        {
-          if(e.getX() > pickEdge.fromState.x && e.getX() < pickEdge.toState.x)
-            pickEdge.shiftLabel =
-            (pickEdge.fromState.x + (pickEdge.toState.x - pickEdge.fromState.x)/2 - e.getX())*2;
+      if( pickEdge != null ) {
+        if( pickEdge.fromState.x < pickEdge.toState.x ) {
+          if( e.getX() > pickEdge.fromState.x && e.getX() < pickEdge.toState.x )
+            pickEdge.shiftLabel = ( pickEdge.fromState.x
+                + ( pickEdge.toState.x - pickEdge.fromState.x ) / 2 - e.getX() ) * 2;
         }
-        else
-        {
-          if(e.getX() < pickEdge.fromState.x && e.getX() > pickEdge.toState.x)
-           pickEdge.shiftLabel =
-            (pickEdge.fromState.x + (pickEdge.toState.x - pickEdge.fromState.x)/2 - e.getX())*2;
-            }
+        else {
+          if( e.getX() < pickEdge.fromState.x && e.getX() > pickEdge.toState.x )
+            pickEdge.shiftLabel = ( pickEdge.fromState.x
+                + ( pickEdge.toState.x - pickEdge.fromState.x ) / 2 - e.getX() ) * 2;
+        }
         pickEdge = null;
       }
     }
@@ -491,144 +477,253 @@ public class GraphPanel extends JPanel
     e.consume();
   }
 
-  public void mouseEntered(MouseEvent e){}
-  public void mouseExited(MouseEvent e){}
+  public void mouseEntered( MouseEvent e ) {
+  }
 
-  //MouseMotionListener events
-  public void mouseDragged(MouseEvent e)
-  {
-    if(graphtoolbar.selectionMode == graphtoolbar.INSERTEDGE)
-    {
-      if(tempState2 != null)
-      {
+  public void mouseExited( MouseEvent e ) {
+  }
+
+  // MouseMotionListener events
+  public void mouseDragged( MouseEvent e ) {
+    if( graphtoolbar.selectionMode == GraphToolBar.SELECT && pick == null
+        && pickEdge == null ) moveCamera( e );
+    if( graphtoolbar.selectionMode == GraphToolBar.INSERTEDGE ) {
+      if( tempState2 != null ) {
         tempState2.x = e.getX();
         tempState2.y = e.getY();
       }
       int x = e.getX();
       int y = e.getY();
-      for (int i = 0 ; i < states.size(); i++)
-      {
-        State n = (State)states.elementAt(i);
-        if(mouseIn(n,x,y))
+      for( int i = 0; i < states.size(); i++ ) {
+        State n = (State)states.elementAt( i );
+        if( mouseIn( n, x, y ) )
           n.highlight = true;
-        else
-          n.highlight = false;
+        else n.highlight = false;
       }
     }
-    else
-    {
-      if(states.size() > 0 && pick != null)
-      {
+    else {
+      if( states.size() > 0 && pick != null ) {
         pick.x = e.getX();
         pick.y = e.getY();
       }
-      if(pickEdge != null)
-      {
-        if(pickEdge.fromState.x < pickEdge.toState.x)
-        {
-          if(e.getX() > pickEdge.fromState.x && e.getX() < pickEdge.toState.x)
-            pickEdge.shiftLabel =
-            (pickEdge.fromState.x + (pickEdge.toState.x - pickEdge.fromState.x)/2 - e.getX())*2;
+      if( pickEdge != null ) {
+        if( pickEdge.fromState.x < pickEdge.toState.x ) {
+          if( e.getX() > pickEdge.fromState.x && e.getX() < pickEdge.toState.x )
+            pickEdge.shiftLabel = ( pickEdge.fromState.x
+                + ( pickEdge.toState.x - pickEdge.fromState.x ) / 2 - e.getX() ) * 2;
         }
-        else
-        {
-          if(e.getX() < pickEdge.fromState.x && e.getX() > pickEdge.toState.x)
-           pickEdge.shiftLabel =
-            (pickEdge.fromState.x + (pickEdge.toState.x - pickEdge.fromState.x)/2 - e.getX())*2;
-            }
+        else {
+          if( e.getX() < pickEdge.fromState.x && e.getX() > pickEdge.toState.x )
+            pickEdge.shiftLabel = ( pickEdge.fromState.x
+                + ( pickEdge.toState.x - pickEdge.fromState.x ) / 2 - e.getX() ) * 2;
+        }
       }
     }
     repaint();
     e.consume();
   }
 
-  public void mouseMoved(MouseEvent e)
-  {
-    if(graphtoolbar.selectionMode != graphtoolbar.INSERTSTATE)
-    {
+  public void mouseMoved( MouseEvent e ) {
+    if( graphtoolbar.selectionMode != GraphToolBar.INSERTSTATE ) {
       int x = e.getX();
       int y = e.getY();
-      for (int i = 0 ; i < states.size(); i++)
-      {
-        State n = (State)states.elementAt(i);
-        if(mouseIn(n,x,y))
+      boolean hover = false;
+      for( int i = 0; i < states.size(); i++ ) {
+        State n = (State)states.elementAt( i );
+        if( mouseIn( n, x, y ) ) {
           n.highlight = true;
-        else
+          setCursor( new Cursor( Cursor.HAND_CURSOR ) );
+          hover = true;
+          break;
+        }
+        else {
           n.highlight = false;
+        }
       }
-      for(int i = 0; i < transitions.size(); i++)
-      {
-        Edge n = (Edge)transitions.elementAt(i);
-        if(mouseInEdge(n,x,y))
+      for( int i = 0; i < transitions.size(); i++ ) {
+        Edge n = (Edge)transitions.elementAt( i );
+        if( mouseInEdge( n, x, y ) ) {
           n.highlight = true;
-        else
+          setCursor( new Cursor( Cursor.HAND_CURSOR ) );
+          hover = true;
+          break;
+        }
+        else {
           n.highlight = false;
+        }
       }
+      if( !hover ) setCursor( new Cursor( Cursor.DEFAULT_CURSOR ) );
     }
   }
 
-  public boolean mouseIn(State check, int x, int y)
-  {
-    FontMetrics fm = offgraphics.getFontMetrics();
-    int w = fm.stringWidth(check.stateName) + 10;
-    int h = fm.getHeight() + 10;
-    if(x > check.x - w/2 && x < check.x + w/2 &&
-       y > check.y - h/2 && y < check.y + w/2)
-      return true;
+  // MouseWheelListener events
+  public void mouseWheelMoved( MouseWheelEvent e ) {
+    zoomCamera( e );
+  }
+
+  public boolean mouseIn( State check, int x, int y ) {
+    if( x > check.x - w / 2 && x < check.x + w / 2 && y > check.y - h / 2
+        && y < check.y + w / 2 ) return true;
     return false;
   }
 
-  public boolean mouseInEdge(Edge e, int x, int y)
-  {
+  public boolean mouseInEdge( Edge e, int x, int y ) {
     FontMetrics fm = offgraphics.getFontMetrics();
     String label = e.label();
-    int w = fm.stringWidth(label) + 5;
+    int w = fm.stringWidth( label ) + 5;
     int h = fm.getHeight();
     int x1 = (int)e.fromState.x;
     int y1 = (int)e.fromState.y;
-    if(e.fromState == e.toState)
-    {
+    if( e.fromState == e.toState ) {
       int j = 0;
       int total = 0;
-      for(j = 0; j < transitions.size(); j++)
-      {
-        Edge temp = (Edge)transitions.elementAt(j);
-        if(temp == e)
-          break;
-        if(temp.fromState == e.fromState && temp.fromState == temp.toState)
+      for( j = 0; j < transitions.size(); j++ ) {
+        Edge temp = (Edge)transitions.elementAt( j );
+        if( temp == e ) break;
+        if( temp.fromState == e.fromState && temp.fromState == temp.toState )
           total += h + 2;
       }
-      if(x > x1 - w/2 && x < x1 + w/2 &&
-         y > y1 - 50 - h/2 - total && y < y1 - 50 + h/2 - total)
+      if( x > x1 - w / 2 && x < x1 + w / 2 && y > y1 - 50 - h / 2 - total
+          && y < y1 - 50 + h / 2 - total )
         return true;
       else return false;
     }
     int xtemp2 = (int)e.toState.x;
     int x2 = xtemp2 - (int)e.shiftLabel;
     int ytemp2 = (int)e.toState.y;
-    double ytemp22 = (float)ytemp2 + e.shiftLabel*(((float)y1-(float)e.toState.y)/((float)xtemp2-(float)x1));
+    double ytemp22 = (float)ytemp2 + e.shiftLabel
+        * ( ( (float)y1 - (float)e.toState.y ) / ( (float)xtemp2 - (float)x1 ) );
     int y2 = (int)ytemp22;
-    if(x > x1 + (x2-x1)/2 - w/2 &&
-       x < x1 + (x2-x1)/2 + w/2 &&
-       y > y1 + (y2-y1)/2 - h/2 &&
-       y < y1 + (y2-y1)/2 + h/2)
+    if( x > x1 + ( x2 - x1 ) / 2 - w / 2 && x < x1 + ( x2 - x1 ) / 2 + w / 2
+        && y > y1 + ( y2 - y1 ) / 2 - h / 2 && y < y1 + ( y2 - y1 ) / 2 + h / 2 )
       return true;
     return false;
   }
 
-  public void start()
-  {
-    go = new Thread(this);
+  private void moveCamera( MouseEvent e ) {
+    dragEndScreen = e.getPoint();
+    double dx = dragEndScreen.getX() - dragStartScreen.getX();
+    double dy = dragEndScreen.getY() - dragStartScreen.getY();
+    for( int i = 0; i < states.size(); i++ ) {
+      State current = (State)states.elementAt( i );
+      current.x += dx;
+      current.y += dy;
+    }
+    dragStartScreen = dragEndScreen;
+    dragEndScreen = null;
+    this.repaint();
+  }
+  
+  private void moveCamera( Point2D.Double start, Point end ) {
+    double dx = end.getX() - start.getX();
+    double dy = end.getY() - start.getY();
+    for( int i = 0; i < states.size(); i++ ) {
+      State current = (State)states.elementAt( i );
+      current.x += dx;
+      current.y += dy;
+    }
+    this.repaint();
+  }
+
+  private void zoomCamera( MouseWheelEvent e ) {
+    int wheelRotation = e.getWheelRotation();
+    if( wheelRotation > 0 ) {
+      if( zoomLevel < maxZoomLevel ) {
+        zoomLevel++;
+        Font oldF = getFont();
+        Font newF = oldF.deriveFont( (float)( oldF.getSize2D() * ( 1 / zoomMultiplicationFactor ) )  );
+        setFont( newF );
+        double tempW = (double)w;
+        double tempH = (double)h;
+        tempW *= (1 / zoomMultiplicationFactor);
+        tempH *= (1 / zoomMultiplicationFactor);
+        w = (int)Math.ceil( tempW );
+        h = (int)Math.ceil( tempH );
+        for( int i = 0; i < states.size(); i++ ) {
+          State current = (State)states.elementAt( i );
+          current.x *= (1 / zoomMultiplicationFactor);
+          current.y *= (1 / zoomMultiplicationFactor);
+        }
+        double x = ( e.getX() * (1 / zoomMultiplicationFactor) );
+        double y = ( e.getY() * (1 / zoomMultiplicationFactor) );
+        Point2D.Double p = new Point2D.Double( x, y );
+        moveCamera( p, e.getPoint() );
+        this.repaint();
+      }
+    }
+    else {
+      if( zoomLevel > minZoomLevel ) {
+        zoomLevel--;
+        Font oldF = getFont();
+        Font newF = oldF.deriveFont( (float)( oldF.getSize2D() * zoomMultiplicationFactor )  );
+        setFont( newF );
+        w *= ( zoomMultiplicationFactor );
+        h *= ( zoomMultiplicationFactor );      
+        for( int i = 0; i < states.size(); i++ ) {
+          State current = (State)states.elementAt( i );
+          current.x *= zoomMultiplicationFactor;
+          current.y *= zoomMultiplicationFactor;
+        }
+        double x = ( e.getX() * zoomMultiplicationFactor );
+        double y = ( e.getY() * zoomMultiplicationFactor );
+        Point2D.Double p = new Point2D.Double( x, y );
+        moveCamera( p, e.getPoint() );
+        this.repaint();
+      }
+    }
+    zoomSlider.setValue( -1 * zoomLevel );
+  }
+  
+  public void stateChanged( ChangeEvent e ) {
+    int newLevel = -1 * ((JSlider)e.getSource()).getValue();
+    if( newLevel > zoomLevel ) {
+      for( int j = 0; j < (newLevel - zoomLevel); ++j ) {
+        zoomLevel++;
+        Font oldF = getFont();
+        Font newF = oldF.deriveFont( (float)( oldF.getSize2D() * ( 1 / zoomMultiplicationFactor ) )  );
+        setFont( newF );
+        double tempW = (double)w;
+        double tempH = (double)h;
+        tempW *= (1 / zoomMultiplicationFactor);
+        tempH *= (1 / zoomMultiplicationFactor);
+        w = (int)Math.ceil( tempW );
+        h = (int)Math.ceil( tempH );
+        for( int i = 0; i < states.size(); i++ ) {
+          State current = (State)states.elementAt( i );
+          current.x *= (1 / zoomMultiplicationFactor);
+          current.y *= (1 / zoomMultiplicationFactor);
+        }
+        this.repaint();
+      }
+    }
+    else if( newLevel < zoomLevel ){
+      for( int j = 0; j < (zoomLevel - newLevel); ++j ) {
+        zoomLevel--;
+        Font oldF = getFont();
+        Font newF = oldF.deriveFont( (float)( oldF.getSize2D() * zoomMultiplicationFactor )  );
+        setFont( newF );
+        w *= ( zoomMultiplicationFactor );
+        h *= ( zoomMultiplicationFactor );        
+        for( int i = 0; i < states.size(); i++ ) {
+          State current = (State)states.elementAt( i );
+          current.x *= zoomMultiplicationFactor;
+          current.y *= zoomMultiplicationFactor;
+        }
+        this.repaint();
+      }
+    }
+  }
+
+  public void start() {
+    go = new Thread( this );
     go.start();
   }
 
-  public Dimension getMinimumSize()
-  {
-    return new Dimension(300, 500);
+  public Dimension getMinimumSize() {
+    return new Dimension( 300, 500 );
   }
 
-  public Dimension getPreferredSize()
-  {
-    return new Dimension(300, 500);
+  public Dimension getPreferredSize() {
+    return new Dimension( 300, 500 );
   }
 }

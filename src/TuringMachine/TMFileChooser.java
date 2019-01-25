@@ -3,10 +3,19 @@ package TuringMachine;
 import javax.swing.JFileChooser;
 import java.io.*;
 import java.lang.Exception;
+import java.lang.*;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
+import java.awt.print.*;
+
+import org.w3c.dom.*;
+import org.xml.sax.*;
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.*;
+import javax.xml.transform.stream.*;
 
 /**
  * <p>Title: </p>
@@ -19,6 +28,7 @@ import java.awt.*;
 
 public class TMFileChooser extends JFileChooser
 {
+  TapePanel tapepanel;
   GraphPanel graphpanel;
   public JTextField maximum;
 
@@ -27,6 +37,8 @@ public class TMFileChooser extends JFileChooser
     TMFileFilter filter = new TMFileFilter();
     filter.addExtension("tm");
     filter.addExtension("tmo");
+    filter.addExtension("xml");
+    filter.addExtension("txt");
     filter.setDescription("Turing Machine files");
     setFileFilter(filter);
   }
@@ -61,6 +73,20 @@ public class TMFileChooser extends JFileChooser
       TMFileFilter filter = new TMFileFilter();
       filter.addExtension("tmo");
       filter.setDescription("Turing Machine Graph files");
+      setFileFilter(filter);
+    }
+    else if(variation == 3)
+    {
+      TMFileFilter filter = new TMFileFilter();
+      filter.addExtension("xml");
+      filter.setDescription("Turing Machine XML files");
+      setFileFilter(filter);
+    }
+    else if(variation == 4)
+    {
+      TMFileFilter filter = new TMFileFilter();
+      filter.addExtension("txt");
+      filter.setDescription("Turing Machine Tape files");
       setFileFilter(filter);
     }
   }
@@ -212,6 +238,134 @@ public class TMFileChooser extends JFileChooser
       saver.println("}");
       saver.flush();
       saver.close();
+
+    }
+    catch(Exception e){e.printStackTrace();}
+  }
+
+  public void saveTapeFile(File save){
+      try
+      {
+          Writer output = new BufferedWriter(new FileWriter(save));
+          output.write("Tape\n");
+          for(int j = 0; j < graphpanel.machine.TAPESIZE; j++)
+            output.write(String.valueOf(graphpanel.machine.tape.getValueAt(0,j)));
+          output.write(String.valueOf(graphpanel.machine.tapePos));
+          output.close();
+      }
+      catch(Exception e){e.printStackTrace();}
+  }
+
+  public void saveInputFile(File save){
+      try
+      {
+          Writer output = new BufferedWriter(new FileWriter(save));
+          output.write("Input\n");
+          Vector<JTextField> inputs = graphpanel.machine.messages.miWindow.getInputs();
+          for(int i = 0; i<inputs.size(); i++){
+              if(inputs.get(i).getText() == ""){
+                  continue;
+              }
+              else{
+                  output.write(inputs.get(i).getText() + "\n");
+              }
+          }
+          output.close();
+      }
+      catch(Exception e){e.printStackTrace();}
+  }
+
+  public void saveXMLFile(File save){
+    try
+    {
+
+       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+       DocumentBuilder builder = factory.newDocumentBuilder();
+       DOMImplementation impl = builder.getDOMImplementation();
+       Document xmldoc = impl.createDocument(null, null, null);
+
+
+       Element root = xmldoc.createElement("TuringMachine");
+       xmldoc.appendChild(root);
+
+       Element states = xmldoc.createElement("States");
+       root.appendChild(states);
+
+       for(int j = 0; j < graphpanel.states.size(); j++){
+           State temp = (State)graphpanel.states.elementAt(j);
+           Element e = xmldoc.createElement("State_" + temp.stateName);
+           states.appendChild(e);
+           Element f = xmldoc.createElement("x");
+           Node n = xmldoc.createTextNode(Double.toString(temp.x));
+           f.appendChild(n);
+           e.appendChild(f);
+           f = xmldoc.createElement("y");
+           n = xmldoc.createTextNode(Double.toString(temp.y));
+           f.appendChild(n);
+           e.appendChild(f);
+           f = xmldoc.createElement("finalstate");
+           n = xmldoc.createTextNode(Boolean.toString(temp.finalState));
+           f.appendChild(n);
+           e.appendChild(f);
+           f = xmldoc.createElement("startstate");
+           n = xmldoc.createTextNode(Boolean.toString(temp.startState));
+           f.appendChild(n);
+           e.appendChild(f);
+       }
+
+       Element transitions = xmldoc.createElement("Transitions");
+       root.appendChild(transitions);
+
+       for(int i = 0; i < graphpanel.transitions.size(); i++){
+           Edge temp = (Edge)graphpanel.transitions.elementAt(i);
+           Element e = xmldoc.createElement("Transition_" + Integer.toString(i));
+           transitions.appendChild(e);
+           Element f = xmldoc.createElement("fromstate");
+           Node n = xmldoc.createTextNode(temp.fromState.stateName);
+           f.appendChild(n);
+           e.appendChild(f);
+           f = xmldoc.createElement("tostate");
+           n = xmldoc.createTextNode(temp.toState.stateName);
+           f.appendChild(n);
+           e.appendChild(f);
+
+           f = xmldoc.createElement("oldchar");
+           if(temp.oldChar != 0){
+               n = xmldoc.createTextNode(Character.toString(temp.oldChar));
+           }
+           else{
+               n = xmldoc.createTextNode("null");
+           }
+           f.appendChild(n);
+           e.appendChild(f);
+
+           f = xmldoc.createElement("newchar");
+           if(temp.newChar != 0){
+               n = xmldoc.createTextNode(Character.toString(temp.newChar));
+           }
+           else{
+               n = xmldoc.createTextNode("null");
+           }
+           f.appendChild(n);
+           e.appendChild(f);
+
+
+           f = xmldoc.createElement("direction");
+           n = xmldoc.createTextNode(Integer.toString(temp.direction));
+           f.appendChild(n);
+           e.appendChild(f);
+       }
+
+       TransformerFactory tFactory = TransformerFactory.newInstance();
+       Transformer transformer = tFactory.newTransformer();
+
+       transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+       transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+       transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+       
+       DOMSource source = new DOMSource(xmldoc);
+       Result result = new StreamResult(save);
+       transformer.transform(source, result);
 
     }
     catch(Exception e){e.printStackTrace();}
@@ -398,6 +552,7 @@ public class TMFileChooser extends JFileChooser
         text = infile.readLine();
       }
 
+
       graphpanel.machine.currentEdge = null;
       graphpanel.machine.currentState = null;
       graphpanel.machine.states = graphpanel.states;
@@ -415,6 +570,185 @@ public class TMFileChooser extends JFileChooser
     }
     catch(Exception e){e.printStackTrace();}
   }
+
+    public void openXMLFile(File open){
+      try
+      {
+
+       graphpanel.states = new Vector();
+       graphpanel.transitions = new SortedListModel();
+       
+       DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+       DocumentBuilder builder = factory.newDocumentBuilder();
+       Document xmldoc = builder.parse(open);
+
+       Element docEle = xmldoc.getDocumentElement();
+       NodeList nl = docEle.getElementsByTagName("States");
+
+       double x = 0;
+       double y = 0;
+       boolean finalstate = false;
+       boolean startstate = false;
+       String statename = " ";
+       int nodecount = 0;
+       if(nl != null && nl.getLength() > 0){
+           for(int j = 0; j < nl.getLength(); j++){
+                NodeList childnl = nl.item(j).getChildNodes();
+                if(childnl != null && childnl.getLength() > 0){
+                    for(int i = 0; i < childnl.getLength(); i++){
+                        NodeList counter = childnl.item(i).getChildNodes();
+                        if(counter != null && counter.getLength() > 0){
+                            for(int k = 0; k < counter.getLength(); k++){
+                                Node e = counter.item(k);
+                                if(e.getNodeName().equals("x")){
+                                    x = Double.valueOf(e.getTextContent());
+                                }
+                                if(e.getNodeName().equals("y")){
+                                    y = Double.valueOf(e.getTextContent());
+                                }
+                                if(e.getNodeName().equals("finalstate")){
+                                    finalstate = Boolean.valueOf(e.getTextContent());
+                                }
+                                if(e.getNodeName().equals("startstate")){
+                                    startstate = Boolean.valueOf(e.getTextContent());
+                                }
+                            }
+                            if(!childnl.item(i).getNodeName().equals("#text")){
+                                statename = childnl.item(i).getNodeName().substring(6);
+                                graphpanel.addState(x, y, statename);
+                                State temp = (State)graphpanel.states.elementAt(nodecount);
+                                nodecount++;
+                                if(startstate == true){
+                                    temp.startState = true;
+                                }
+                                if(finalstate == true){
+                                    temp.finalState = true;
+                                }
+                            }
+                        }
+                    }
+                }
+           }
+       }
+
+       String fromstate = " ";
+       String tostate = " ";
+       char oldchar = 0;
+       char newchar = 0;
+       int direction = 0;
+       nl = docEle.getElementsByTagName("Transitions");
+       if(nl != null && nl.getLength() > 0){
+           for(int j = 0; j < nl.getLength(); j++){
+                NodeList childnl = nl.item(j).getChildNodes();
+                if(childnl != null && childnl.getLength() > 0){
+                    for(int i = 0; i < childnl.getLength(); i++){
+                        NodeList counter = childnl.item(i).getChildNodes();
+                        if(counter != null && counter.getLength() > 0){
+                            for(int k = 0; k < counter.getLength(); k++){
+                                Node e = counter.item(k);
+                                if(e.getNodeName().equals("fromstate")){
+                                    fromstate = e.getTextContent();
+                                }
+                                if(e.getNodeName().equals("tostate")){
+                                    tostate = e.getTextContent();
+                                }
+                                if(e.getNodeName().equals("oldchar")){
+                                    oldchar = e.getTextContent().charAt(0);
+                                }
+                                if(e.getNodeName().equals("newchar")){
+                                    newchar = e.getTextContent().charAt(0);
+                                }
+
+                                if(oldchar == 'n')
+                                    oldchar = 0;
+                                if(newchar == 'n')
+                                    newchar = 0;
+
+                                if(e.getNodeName().equals("direction")){
+                                    direction = Integer.valueOf(e.getTextContent());
+                                }
+                            }
+                            if(!childnl.item(i).getNodeName().equals("#text")){
+                                State from = null, to = null;
+                                for(int m = 0; m < graphpanel.states.size(); m++){
+                                    State temp = (State)graphpanel.states.elementAt(m);
+                                    if(temp.stateName.equals(fromstate)){
+                                        from = (State)graphpanel.states.elementAt(m);
+                                    }
+                                    if(temp.stateName.equals(tostate)){
+                                        to = (State)graphpanel.states.elementAt(m);
+                                    }
+                                }
+                                Edge insert = new Edge(from, to);
+                                insert.oldChar = oldchar;
+                                insert.newChar = newchar;
+                                insert.direction = direction;
+                                graphpanel.transitions.addSortedElement(insert);
+                            }
+                        }
+                    }
+                }
+           }
+       }
+
+      graphpanel.machine.currentEdge = null;
+      graphpanel.machine.currentState = null;
+      graphpanel.machine.states = graphpanel.states;
+      graphpanel.machine.transitions = graphpanel.transitions;
+      JList transitions = new JList(graphpanel.transitions);
+      transitions.setCellRenderer(new TransitionCellRenderer());
+      graphpanel.transitionpanel.getViewport().setView(transitions);
+      for(int k = 0; k < graphpanel.states.size(); k++)
+      {
+        State temp = (State)graphpanel.states.elementAt(k);
+        temp.currentState = false;
+        temp.highlight = false;
+      }
+      
+      }
+      catch(Exception e){e.printStackTrace();}
+    }
+
+    public void openTapeFile(File open)
+    {
+        try
+        {
+          BufferedReader input = new BufferedReader(new FileReader(open));
+          char[] cbuf = {' ', ' ', ' ', ' '};
+          String inputcheck = null;
+          Vector inputs = new Vector();
+
+          inputcheck = input.readLine();
+
+          if(inputcheck.equals("Tape")){
+
+             for (int i=0; i < graphpanel.machine.TAPESIZE; i++){
+              input.read(cbuf, 0, 1);
+              graphpanel.machine.tape.setValueAt(new Character(cbuf[0]), 0, i);
+             }
+             input.read(cbuf);
+             graphpanel.machine.tape.getColumnModel().getColumn(graphpanel.machine.tapePos).setHeaderValue(new Character('0'));
+             graphpanel.machine.tapePos = Integer.valueOf(String.valueOf(cbuf).split(" ")[0]);
+             graphpanel.machine.tape.getColumnModel().getColumn(graphpanel.machine.tapePos).setHeaderValue(new Character('-'));
+             graphpanel.machine.tape.getTableHeader().repaint();
+             input.close();
+            }
+          
+          else if(inputcheck.equals("Input")){
+              while((inputcheck = input.readLine()) != null){
+                  inputs.add(inputcheck);
+              }
+
+              if(!graphpanel.machine.messages.miWindow.isVisible()){
+                 graphpanel.machine.messages.miWindow.setMachine(graphpanel.machine);
+                 graphpanel.machine.messages.miWindow.setMessagePanel(graphpanel.machine.messages);
+                 graphpanel.machine.messages.miWindow.setVisible(true);
+              }
+              graphpanel.machine.messages.miWindow.setInputs(inputs);
+          }
+        }
+        catch(Exception e){e.printStackTrace();}
+    }
 }
 
 class ExecutionSaver extends Thread

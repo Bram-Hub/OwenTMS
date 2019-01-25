@@ -1,22 +1,12 @@
 package TuringMachine;
 
 import java.util.*;
-import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.io.*;
 
-/**
- * <p>Title: </p>
- * <p>Description: </p>
- * <p>Copyright: Copyright (c) 2002</p>
- * <p>Company: </p>
- * @author unascribed
- * @version 1.0
- */
-
-class State implements Serializable
-{
+class State implements Serializable {
+  private static final long serialVersionUID = 7903724405884412505L;
   double x;
   double y;
   String stateName;
@@ -27,8 +17,7 @@ class State implements Serializable
 
   boolean highlight = false;
 
-  public State(double x, double y, String name, boolean f)
-  {
+  public State( double x, double y, String name, boolean f ) {
     this.x = x;
     this.y = y;
     finalState = f;
@@ -38,8 +27,7 @@ class State implements Serializable
   }
 }
 
-class Edge
-{
+class Edge {
   State fromState;
   State toState;
 
@@ -52,84 +40,75 @@ class Edge
 
   double shiftLabel = 0;
 
-  public Edge(State from, State to)
-  {
+  public Edge( State from, State to ) {
     fromState = from;
     toState = to;
   }
 
-  String label()
-  {
+  String label() {
     String temp = new String();
-    if(oldChar != 0)
-      temp = new String(String.valueOf(oldChar));
-    if(newChar != 0)
-    {
-      temp = temp.concat(", ");
-      temp = temp.concat(String.valueOf(newChar));
+    if( oldChar != 0 ) temp = new String( String.valueOf( oldChar ) );
+    if( newChar != 0 ) {
+      temp = temp.concat( ", " );
+      temp = temp.concat( String.valueOf( newChar ) );
     }
-    if(direction != TM.NULL)
-    {
-      temp = temp.concat(", ");
-      if(direction == TM.LEFT)
-        temp = temp.concat("Left");
-      else if(direction == TM.RIGHT)
-        temp = temp.concat("Right");
-      else
-        temp = temp.concat("Stay");
+    if( direction != TM.NULL ) {
+      temp = temp.concat( ", " );
+      if( direction == TM.LEFT )
+        temp = temp.concat( "Left" );
+      else if( direction == TM.RIGHT )
+        temp = temp.concat( "Right" );
+      else temp = temp.concat( "Stay" );
     }
     return temp;
   }
 
-  String listLabel()
-  {
-    String temp = new String("(");
-    temp = temp.concat(fromState.stateName);
-    temp = temp.concat(", ");
-    temp = temp.concat(String.valueOf(oldChar));
-    temp = temp.concat(")  ");
-    temp = temp.concat("(");
-    temp = temp.concat(toState.stateName);
-    if(newChar != 0)
-    {
-      temp = temp.concat(", ");
-      temp = temp.concat(String.valueOf(newChar));
+  String listLabel() {
+    String temp = new String( "(" );
+    temp = temp.concat( fromState.stateName );
+    temp = temp.concat( ", " );
+    temp = temp.concat( String.valueOf( oldChar ) );
+    temp = temp.concat( ")  " );
+    temp = temp.concat( "(" );
+    temp = temp.concat( toState.stateName );
+    if( newChar != 0 ) {
+      temp = temp.concat( ", " );
+      temp = temp.concat( String.valueOf( newChar ) );
     }
-    if(direction != TM.NULL)
-    {
-      temp = temp.concat(", ");
-      if(direction == TM.LEFT)
-        temp = temp.concat("Left");
-      else if(direction == TM.RIGHT)
-        temp = temp.concat("Right");
-      else
-        temp = temp.concat("Stay");
+    if( direction != TM.NULL ) {
+      temp = temp.concat( ", " );
+      if( direction == TM.LEFT )
+        temp = temp.concat( "Left" );
+      else if( direction == TM.RIGHT )
+        temp = temp.concat( "Right" );
+      else temp = temp.concat( "Stay" );
     }
-    temp = temp.concat(")");
+    temp = temp.concat( ")" );
     return temp;
   }
 }
 
-class TM implements Runnable
-{
-  //transition results
+class TM implements Runnable {
+  // transition results
   public static final int SUCCESS = 0, HALTED = -1, NOTFOUND = -2,
-                          ABNORMAL = -3, NOPROG = -4, USERINT = -5;
-  //speeds
+      ABNORMAL = -3, NOPROG = -4, USERINT = -5;
+  // speeds
   public static final int SLOW = 0, FAST = 1, VERYFAST = 2, COMPUTE = 3;
-  //moving direction
+  // moving direction
   public static final int NULL = 0, LEFT = 1, RIGHT = 2, STAY = 3;
-  //tapesize
+  // tapesize
   public static final int TAPESIZE = 1000;
   public static final char DEFAULTCHAR = '0';
   public static final int QUADRUPLE = 4, QUINTUPLE = 5;
 
   public boolean go = true;
 
+  // public boolean reachedHaltingState = false;
+
   boolean programmed = false;
   boolean nextStateNotSet = false;
 
-  //interior components
+  // interior components
   int speed;
   TapeTableModel tapemodel = new TapeTableModel();
   JTable tape;
@@ -141,324 +120,317 @@ class TM implements Runnable
   int totalTransitions;
   int moving;
 
-  //references to exterior components
+  // references to exterior components
   State currentState;
   Edge currentEdge;
+  @SuppressWarnings( "unchecked" )
   Vector states;
   DefaultListModel transitions;
   MessagePanel messages;
   TransitionsPane transitionpanel;
-//  TapePanel display;
 
-  public TM()
-  {
-    initMachine(TAPESIZE/2, "", new StringBuffer(""));
-    //tapepanel.getViewport().setView(tape);
+  // TapePanel display;
+
+  public TM() {
+    initMachine( TAPESIZE / 2, "", new StringBuffer( "" ) );
+    // tapepanel.getViewport().setView(tape);
   }
 
-  /*public void setTape(TapePanel tape)
-  {
-//    display = tape;
-  }*/
-  public void setTransitions(DefaultListModel transitions)
-  {
+  /*
+   * public void setTape(TapePanel tape) { // display = tape; }
+   */
+  public void setTransitions( DefaultListModel transitions ) {
     this.transitions = transitions;
   }
-  public void setStates(Vector states)
-  {
+
+  @SuppressWarnings( "unchecked" )
+  public void setStates( Vector states ) {
     this.states = states;
   }
-  public void setMessagePanel(MessagePanel messages)
-  {
+
+  public void setMessagePanel( MessagePanel messages ) {
     this.messages = messages;
   }
-  public void setTransitionPanel(TransitionsPane transitionpanel)
-  {
+
+  public void setTransitionPanel( TransitionsPane transitionpanel ) {
     this.transitionpanel = transitionpanel;
   }
 
-  public void setSpeed(String newSpeed)
-  {
-    if (newSpeed.equals("Slow"))
+  public void setSpeed( String newSpeed ) {
+    if( newSpeed.equals( "Slow" ) )
       speed = SLOW;
-    else if (newSpeed.equals("Fast"))
+    else if( newSpeed.equals( "Fast" ) )
       speed = FAST;
-    else if (newSpeed.equals("Very Fast"))
+    else if( newSpeed.equals( "Very Fast" ) )
       speed = VERYFAST;
-    else
-      speed = COMPUTE;
+    else speed = COMPUTE;
   }
 
-  public void setState(State newState)
-  {
-    if(currentState != null)
-      currentState.currentState = false;
+  public void setState( State newState ) {
+    if( currentState != null ) currentState.currentState = false;
     currentState = newState;
     currentState.currentState = true;
   }
 
-  public void setEdge(Edge newEdge)
-  {
-    if(currentEdge != null)
-      currentEdge.currentEdge = false;
+  public void setEdge( Edge newEdge ) {
+    if( currentEdge != null ) currentEdge.currentEdge = false;
     currentEdge = newEdge;
     currentEdge.currentEdge = true;
   }
 
-  public void clearEdge()
-  {
-    for(int j = 0; j < transitions.size(); j++)
-    {
-      Edge n = (Edge)transitions.elementAt(j);
+  public void clearEdge() {
+    for( int j = 0; j < transitions.size(); j++ ) {
+      Edge n = (Edge)transitions.elementAt( j );
       n.currentEdge = false;
     }
     currentEdge = null;
   }
 
-  public boolean validTapeChar(char ch)
-  {
-    return (miscUtil.isLetterOrDigit(ch)
-            || " +/*-!@#$%^&()=,.".indexOf(ch) > -1);
+  public boolean validTapeChar( char ch ) {
+    return( miscUtil.isLetterOrDigit( ch ) || " +/*-!@#$%^&()=,.".indexOf( ch ) > -1 );
   }
 
-  public boolean initMachine(int initPos, String initChars,
-                             StringBuffer errorMsg)
-  {
+  @SuppressWarnings( "unchecked" )
+  public boolean initMachine( int initPos, String initChars,
+      StringBuffer errorMsg ) {
 
-    char c;
     this.initPos = initPos;
-    int numChars = initChars.length();
+    // int numChars = initChars.length();
     Vector tapeIndicator = new Vector();
     Vector tapeData = new Vector();
-    for (int i=0; i < TAPESIZE; i++)
-    {
-      tapeIndicator.add(new Character('0'));
-      tapeData.add(new Character(DEFAULTCHAR));
+    for( int i = 0; i < TAPESIZE; i++ ) {
+      tapeIndicator.add( new Character( '0' ) );
+      tapeData.add( new Character( DEFAULTCHAR ) );
     }
-    tapeIndicator.setElementAt(new Character('-'), initPos);
+    tapeIndicator.setElementAt( new Character( '-' ), initPos );
     Vector tapeData2 = new Vector();
-    tapeData2.add(tapeData);
-    tapemodel.setDataVector(tapeData2, tapeIndicator);
-    tape = new JTable(tapemodel);
-    tape.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-    for(int j = 0; j < TAPESIZE; j++)
-    {
-      TableColumn col = tape.getColumnModel().getColumn(j);
-      col.setMinWidth(10);
-      col.setMaxWidth(15);
-      col.setPreferredWidth(11);
-      col.setHeaderRenderer(new TapeCellRenderer());
+    tapeData2.add( tapeData );
+    tapemodel.setDataVector( tapeData2, tapeIndicator );
+    tape = new JTable( tapemodel );
+    tape.setAutoResizeMode( JTable.AUTO_RESIZE_OFF );
+    for( int j = 0; j < TAPESIZE; j++ ) {
+      TableColumn col = tape.getColumnModel().getColumn( j );
+      col.setMinWidth( 10 );
+      col.setMaxWidth( 15 );
+      col.setPreferredWidth( 11 );
+      col.setHeaderRenderer( new TapeCellRenderer() );
     }
 
     tapePos = initPos;
     leftMost = initPos;
     rightMost = initPos;
-    tape.scrollRectToVisible(tape.getCellRect(0, tapePos - 5, true));
+    tape.scrollRectToVisible( tape.getCellRect( 0, tapePos - 5, true ) );
     initNonBlanks = 0;
-    /*for (int i=0; i < numChars; i++) {
-      c = initChars.charAt(i);
-      if (c == '_')
-        c = ' ';
-      if (!validTapeChar(c))
-      {
-        errorMsg.append("Invalid tape character '" + c + "'");
-        return false;
-      }
-      tape.setValueAt(new Character(c), 2, initPos+i);
-      if (c != ' ')
-        initNonBlanks++;
-    }*/
+    /*
+     * for (int i=0; i < numChars; i++) { c = initChars.charAt(i); if (c == '_')
+     * c = ' '; if (!validTapeChar(c)) {
+     * errorMsg.append("Invalid tape character '" + c + "'"); return false; }
+     * tape.setValueAt(new Character(c), 2, initPos+i); if (c != ' ')
+     * initNonBlanks++; }
+     */
     nonBlanks = initNonBlanks;
     totalTransitions = 0;
 
     return true;
   }
 
-  public void loadInputString(String input)
-  {
-    for(int j = 0; j < input.length(); j++)
-    {
-      if(input.charAt(j) != '0' && ((Character)tape.getValueAt(0, tapePos + j)).charValue() == '0')
+  public void loadInputString( String input ) {
+    for( int j = 0; j < input.length(); j++ ) {
+      if( input.charAt( j ) != '0'
+          && ( (Character)tape.getValueAt( 0, tapePos + j ) ).charValue() == '0' )
         nonBlanks++;
-      if(input.charAt(j) == '0' && ((Character)tape.getValueAt(0, tapePos + j)).charValue() != '0')
+      if( input.charAt( j ) == '0'
+          && ( (Character)tape.getValueAt( 0, tapePos + j ) ).charValue() != '0' )
         nonBlanks--;
-      tape.setValueAt(new Character(input.charAt(j)), 0, tapePos + j);
+      tape.setValueAt( new Character( input.charAt( j ) ), 0, tapePos + j );
     }
     leftMost = tapePos;
-    rightMost = tapePos + input.length()-1;
+    rightMost = tapePos + input.length() - 1;
   }
 
-  public void scrollTape(int dir)
-  {
-    if(dir == LEFT)
-    {
-      if(tapePos == 20)
-      {
-        for(int j = 0; j < TAPESIZE; j++)
-        {
+  // Returns a string representing what is on the tape (not including
+  // infinite 0's on eiter end)
+  public String printTape() {
+    String output = new String();
+    String temp;
+    for( int j = 0; j < ( rightMost - leftMost + 1 ); j++ ) {
+      temp = output;
+      output = temp
+          + ( (Character)tape.getValueAt( 0, leftMost + j ) ).charValue();
+    }
+    return output;
+  }
+
+  public void scrollTape( int dir ) {
+    if( dir == LEFT ) {
+      if( tapePos == 20 ) {
+        for( int j = 0; j < TAPESIZE; j++ ) {
           TableColumn col = new TableColumn();
-          col.setMinWidth(10);
-          col.setMaxWidth(15);
-          col.setPreferredWidth(11);
-          col.setHeaderValue(new Character('0'));
-          col.setHeaderRenderer(new TapeCellRenderer());
-          tape.addColumn(col);
-          tape.moveColumn(tape.getColumnCount()-1, 0);
-          tape.setValueAt(new Character('0'), 0, 0);
+          col.setMinWidth( 10 );
+          col.setMaxWidth( 15 );
+          col.setPreferredWidth( 11 );
+          col.setHeaderValue( new Character( '0' ) );
+          col.setHeaderRenderer( new TapeCellRenderer() );
+          tape.addColumn( col );
+          tape.moveColumn( tape.getColumnCount() - 1, 0 );
+          tape.setValueAt( new Character( '0' ), 0, 0 );
         }
         tapePos += TAPESIZE;
         leftMost += TAPESIZE;
         rightMost += TAPESIZE;
       }
-      tape.getColumnModel().getColumn(tapePos).setHeaderValue(new Character('0'));
+      tape.getColumnModel().getColumn( tapePos ).setHeaderValue(
+          new Character( '0' ) );
       tapePos--;
-      tape.getColumnModel().getColumn(tapePos).setHeaderValue(new Character('-'));
+      tape.getColumnModel().getColumn( tapePos ).setHeaderValue(
+          new Character( '-' ) );
       tape.getTableHeader().repaint();
-      tape.scrollRectToVisible(tape.getCellRect(0, tapePos - 5, true));
-      tape.scrollRectToVisible(tape.getCellRect(0, tapePos + 5, true));
-      if(tapePos < leftMost)
-        leftMost = tapePos;
+      tape.scrollRectToVisible( tape.getCellRect( 0, tapePos - 5, true ) );
+      tape.scrollRectToVisible( tape.getCellRect( 0, tapePos + 5, true ) );
+      if( tapePos < leftMost ) leftMost = tapePos;
     }
-    else if(dir == RIGHT)
-    {
-      if(tapePos == tape.getColumnCount() - 20)
-      {
-        for(int j = 0; j < TAPESIZE; j++)
-        {
+    else if( dir == RIGHT ) {
+      if( tapePos == tape.getColumnCount() - 20 ) {
+        for( int j = 0; j < TAPESIZE; j++ ) {
           TableColumn col = new TableColumn();
-          col.setMinWidth(10);
-          col.setMaxWidth(15);
-          col.setPreferredWidth(11);
-          col.setHeaderRenderer(new TapeCellRenderer());
-          col.setHeaderValue(new Character('0'));
-          tape.addColumn(col);
-          tape.setValueAt(new Character('0'), 0, tape.getColumnCount()-1);
+          col.setMinWidth( 10 );
+          col.setMaxWidth( 15 );
+          col.setPreferredWidth( 11 );
+          col.setHeaderRenderer( new TapeCellRenderer() );
+          col.setHeaderValue( new Character( '0' ) );
+          tape.addColumn( col );
+          tape.setValueAt( new Character( '0' ), 0, tape.getColumnCount() - 1 );
         }
       }
-      tape.getColumnModel().getColumn(tapePos).setHeaderValue(new Character('0'));
+      tape.getColumnModel().getColumn( tapePos ).setHeaderValue(
+          new Character( '0' ) );
       tapePos++;
-      tape.getColumnModel().getColumn(tapePos).setHeaderValue(new Character('-'));
+      tape.getColumnModel().getColumn( tapePos ).setHeaderValue(
+          new Character( '-' ) );
       tape.getTableHeader().repaint();
-      tape.scrollRectToVisible(tape.getCellRect(0, tapePos - 5, true));
-      tape.scrollRectToVisible(tape.getCellRect(0, tapePos + 5, true));
-      if(tapePos > rightMost)
-        rightMost = tapePos;
+      tape.scrollRectToVisible( tape.getCellRect( 0, tapePos - 5, true ) );
+      tape.scrollRectToVisible( tape.getCellRect( 0, tapePos + 5, true ) );
+      if( tapePos > rightMost ) rightMost = tapePos;
     }
   }
 
-  public void run()
-  {
+  public void run() {
+    // reachedHaltingState = true;
     go = true;
-    while (go)
-    {
-      if (speed == SLOW)
+    while ( go ) {
+      if( speed == SLOW )
         try {
-          Thread.sleep(500);
-        } catch (InterruptedException e) {}
-      else if (speed == FAST)
+          Thread.sleep( 500 );
+        }
+        catch ( InterruptedException e ) {
+        }
+      else if( speed == FAST )
         try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {}
-      else if (speed == VERYFAST)
-        try {
-          Thread.sleep(25);
-        } catch (InterruptedException e) {}
-      messages.addMessage(transition());
+          Thread.sleep( 100 );
+        }
+        catch ( InterruptedException e ) {
+        }
+      else if( speed == VERYFAST ) try {
+        Thread.sleep( 25 );
+      }
+      catch ( InterruptedException e ) {
+      }
+      messages.addMessage( transition() );
     }
     clearEdge();
     moving = STAY;
-   // display.repaint();
+    // display.repaint();
   }
 
-  public String transition()
-  {
+  public String transition() {
     go = true;
     String temp = new String();
-    if(currentState == null)
-    {
-      if(states.size() > 0)
-        setState((State)states.elementAt(0));
-      else
-      {
+    if( currentState == null ) {
+      if( states.size() > 0 )
+        setState( (State)states.elementAt( 0 ) );
+      else {
         go = false;
-        return temp.concat("Machine not created");
+        // reachedHaltingState = false;
+        return temp.concat( "Machine not created" );
       }
     }
-    if(currentState.finalState)
-    {
+    if( currentState.finalState ) {
       go = false;
-      return temp.concat("Machine halted");
+      return temp.concat( "Machine halted" );
     }
-    temp = new String("In state " + currentState.stateName +
-                             ", " + tape.getValueAt(0, tapePos).toString() +
-                             " read on tape:\n\t");
+    temp = new String( "In state " + currentState.stateName + ", "
+        + tape.getValueAt( 0, tapePos ).toString() + " read on tape:\n\t" );
     Edge fromTemp;
-    String currentCharTemp = String.valueOf(tape.getValueAt(0, tapePos));
-    char currentCharTemp2 = currentCharTemp.charAt(0);
+    String currentCharTemp = String.valueOf( tape.getValueAt( 0, tapePos ) );
+    char currentCharTemp2 = currentCharTemp.charAt( 0 );
     Character currentChar;
-    currentChar = new Character(currentCharTemp2);
-    for(int i = 0; i < transitions.size(); i++)
-    {
-      fromTemp = (Edge)transitions.elementAt(i);
-      if(fromTemp.fromState == currentState &&
-         fromTemp.oldChar == currentChar.charValue())
-      {
-        temp = temp.concat("Transition to state " + fromTemp.toState.stateName);
-        if(fromTemp.newChar != 0)
-        {
-          if(fromTemp.newChar == '0' && currentChar.charValue() != '0')
+    currentChar = new Character( currentCharTemp2 );
+    for( int i = 0; i < transitions.size(); i++ ) {
+      fromTemp = (Edge)transitions.elementAt( i );
+      if( fromTemp.fromState == currentState
+          && fromTemp.oldChar == currentChar.charValue() ) {
+        temp = temp
+            .concat( "Transition to state " + fromTemp.toState.stateName );
+        if( fromTemp.newChar != 0 ) {
+          if( fromTemp.newChar == '0' && currentChar.charValue() != '0' )
             nonBlanks--;
-          else if(fromTemp.newChar != '0' && currentChar.charValue() == '0')
+          else if( fromTemp.newChar != '0' && currentChar.charValue() == '0' )
             nonBlanks++;
-          tape.setValueAt(new Character(fromTemp.newChar), 0, tapePos);
-          temp = temp.concat(", " + String.valueOf(fromTemp.newChar) + " written");
+          tape.setValueAt( new Character( fromTemp.newChar ), 0, tapePos );
+          temp = temp.concat( ", " + String.valueOf( fromTemp.newChar )
+              + " written" );
         }
-        scrollTape(fromTemp.direction);
-        if(fromTemp.direction != NULL)
-        {
-          temp = temp.concat(", ");
-          switch(fromTemp.direction)
-          {
-            case RIGHT: temp = temp.concat("Move read head Right");
-              break;
-            case LEFT: temp = temp.concat("Move read head Left");
-              break;
+        scrollTape( fromTemp.direction );
+        if( fromTemp.direction != NULL ) {
+          temp = temp.concat( ", " );
+          switch ( fromTemp.direction ) {
+          case RIGHT:
+            temp = temp.concat( "Move read head Right" );
+            break;
+          case LEFT:
+            temp = temp.concat( "Move read head Left" );
+            break;
           }
         }
-        setEdge(fromTemp);
+        setEdge( fromTemp );
         nextStateNotSet = true;
         transitionpanel.getViewport().repaint();
-        if (speed == SLOW)
+        if( speed == SLOW )
           try {
-          Thread.sleep(500);
-          } catch (InterruptedException e) {}
-          else if (speed == FAST)
-            try {
-            Thread.sleep(100);
-            } catch (InterruptedException e) {}
-            else if (speed == VERYFAST)
-              try {
-              Thread.sleep(25);
-              } catch (InterruptedException e) {}
-              setState(fromTemp.toState);
-              totalTransitions++;
-              messages.updateLabels(nonBlanks, totalTransitions);
-              moving = fromTemp.direction;
+            Thread.sleep( 500 );
+          }
+          catch ( InterruptedException e ) {
+          }
+        else if( speed == FAST )
+          try {
+            Thread.sleep( 100 );
+          }
+          catch ( InterruptedException e ) {
+          }
+        else if( speed == VERYFAST ) try {
+          Thread.sleep( 25 );
+        }
+        catch ( InterruptedException e ) {
+        }
+        setState( fromTemp.toState );
+        totalTransitions++;
+        messages.updateLabels( nonBlanks, totalTransitions );
+        moving = fromTemp.direction;
         nextStateNotSet = false;
         return temp;
       }
     }
+    // reachedHaltingState=false;
     go = false;
-    return temp.concat("No applicable transition found\nMachine halted");
+    return temp.concat( "No applicable transition found\nMachine halted" );
   }
 }
 
-class miscUtil
-{
+class miscUtil {
 
-  public static boolean isLetterOrDigit(char ch) {     // for Java 1.0
-    String list = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" +
-                  "0123456789";
-    return (list.indexOf(ch) > -1);
+  public static boolean isLetterOrDigit( char ch ) { // for Java 1.0
+    String list = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+        + "0123456789";
+    return( list.indexOf( ch ) > -1 );
   }
 }

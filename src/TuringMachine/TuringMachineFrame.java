@@ -39,6 +39,12 @@ public class TuringMachineFrame extends JFrame {
    * Save Graph option for the File menu
    */
   private JMenuItem jMenuFileSaveGraph = new JMenuItem();
+
+  private JMenuItem jMenuFileSaveXML = new JMenuItem();
+
+  private JMenuItem jMenuFileSaveTape = new JMenuItem();
+
+  private JMenuItem jMenuFileSaveMultiple = new JMenuItem();
   /**
    * Save Execution option for the File menu
    */
@@ -117,6 +123,24 @@ public class TuringMachineFrame extends JFrame {
         jMenuFileSaveGraph_actionPerformed(e);
       }
     });
+    jMenuFileSaveXML.setText("Save XML");
+    jMenuFileSaveXML.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        jMenuFileSaveXML_actionPerformed(e);
+      }
+    });
+    jMenuFileSaveTape.setText("Save Tape");
+    jMenuFileSaveTape.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        jMenuFileSaveTape_actionPerformed(e);
+      }
+    });
+    jMenuFileSaveMultiple.setText("Save Multiple");
+    jMenuFileSaveMultiple.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        jMenuFileSaveMultiple_actionPerformed(e);
+      }
+    });
     jMenuFileSaveExecution.setText("Save Execution");
     jMenuFileSaveExecution.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
@@ -135,6 +159,9 @@ public class TuringMachineFrame extends JFrame {
     jMenuFile.add(jMenuFileOpen);
     jMenuFile.add(jMenuFileSave);
     jMenuFile.add(jMenuFileSaveGraph);
+    jMenuFile.add(jMenuFileSaveXML);
+    jMenuFile.add(jMenuFileSaveTape);
+    jMenuFile.add(jMenuFileSaveMultiple);
     jMenuFile.add(jMenuFileSaveExecution);
     jMenuFile.add(jMenuFileExit);
     jMenuHelp.add(jMenuHelpAbout);
@@ -169,8 +196,12 @@ public class TuringMachineFrame extends JFrame {
     {
       if(filechooser.getSelectedFile().getName().endsWith("tm"))
         filechooser.openFile(filechooser.getSelectedFile());
-      else
+      else if(filechooser.getSelectedFile().getName().endsWith("tmo"))
         filechooser.openTMOFile(filechooser.getSelectedFile());
+      else if(filechooser.getSelectedFile().getName().endsWith("txt"))
+        filechooser.openTapeFile(filechooser.getSelectedFile());
+      else
+          filechooser.openXMLFile(filechooser.getSelectedFile());
     }
   }
   /**
@@ -238,6 +269,96 @@ public class TuringMachineFrame extends JFrame {
       }
       else
         filechooser.saveTMOFile(newSelect);
+    }
+  }
+
+  public void jMenuFileSaveXML_actionPerformed(ActionEvent e) {
+    TMFileChooser filechooser = new TMFileChooser(3);
+    filechooser.setGraphPanel(machine.graphpanel);
+    int confirm = filechooser.showSaveDialog(this);
+    if(confirm == TMFileChooser.APPROVE_OPTION)
+    {
+      File newSelect;
+      File select = filechooser.getSelectedFile();
+      if(select.getName().endsWith(".xml"))
+        newSelect = select;
+      else
+        newSelect = new File(select.getParent() + File.separator + select.getName() + ".xml");
+      if(newSelect.exists())
+      {
+        int answer = JOptionPane.showConfirmDialog(this, newSelect.getName()+" already exists, overwrite?",
+            "Error",JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
+        switch(answer)
+        {
+          case JOptionPane.YES_OPTION :
+            filechooser.saveXMLFile(newSelect);
+            break;
+          case JOptionPane.NO_OPTION :
+            return;
+        }
+      }
+      else
+        filechooser.saveXMLFile(newSelect);
+    }
+  }
+
+  public void jMenuFileSaveTape_actionPerformed(ActionEvent e) {
+    TMFileChooser filechooser = new TMFileChooser(4);
+    filechooser.setGraphPanel(machine.graphpanel);
+    int confirm = filechooser.showSaveDialog(this);
+    if(confirm == TMFileChooser.APPROVE_OPTION)
+    {
+      File newSelect;
+      File select = filechooser.getSelectedFile();
+      if(select.getName().endsWith(".txt"))
+        newSelect = select;
+      else
+        newSelect = new File(select.getParent() + File.separator + select.getName() + ".txt");
+      if(newSelect.exists())
+      {
+        int answer = JOptionPane.showConfirmDialog(this, newSelect.getName()+" already exists, overwrite?",
+            "Error",JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
+        switch(answer)
+        {
+          case JOptionPane.YES_OPTION :
+            filechooser.saveTapeFile(newSelect);
+            break;
+          case JOptionPane.NO_OPTION :
+            return;
+        }
+      }
+      else
+        filechooser.saveTapeFile(newSelect);
+    }
+  }
+
+  public void jMenuFileSaveMultiple_actionPerformed(ActionEvent e) {
+    TMFileChooser filechooser = new TMFileChooser(4);
+    filechooser.setGraphPanel(machine.graphpanel);
+    int confirm = filechooser.showSaveDialog(this);
+    if(confirm == TMFileChooser.APPROVE_OPTION)
+    {
+      File newSelect;
+      File select = filechooser.getSelectedFile();
+      if(select.getName().endsWith(".txt"))
+        newSelect = select;
+      else
+        newSelect = new File(select.getParent() + File.separator + select.getName() + ".txt");
+      if(newSelect.exists())
+      {
+        int answer = JOptionPane.showConfirmDialog(this, newSelect.getName()+" already exists, overwrite?",
+            "Error",JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
+        switch(answer)
+        {
+          case JOptionPane.YES_OPTION :
+            filechooser.saveInputFile(newSelect);
+            break;
+          case JOptionPane.NO_OPTION :
+            return;
+        }
+      }
+      else
+        filechooser.saveInputFile(newSelect);
     }
   }
 
