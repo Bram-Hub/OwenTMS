@@ -11,6 +11,8 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.RenderingHints;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -34,7 +36,7 @@ import javax.swing.event.ChangeListener;
  */
 
 public class GraphPanel extends JPanel implements Runnable, MouseListener,
-    MouseMotionListener, MouseWheelListener, ChangeListener {
+    MouseMotionListener, MouseWheelListener, ChangeListener, KeyListener {
 
   private static final long serialVersionUID = -4396915196603152278L;
   // interior components
@@ -71,8 +73,10 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
     addMouseListener( this );
     addMouseMotionListener( this );
     addMouseWheelListener( this );
+    addKeyListener( this );
     this.graphtoolbar = graphtoolbar;
   }
+ 
 
   public void setMessagePanel( MessagePanel messagepanel ) {
     this.messagepanel = messagepanel;
@@ -94,6 +98,7 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
     Thread me = Thread.currentThread();
     while ( me == go ) {
       repaint();
+      requestFocusInWindow();
       try {
         Thread.sleep( 100 );
       }
@@ -294,7 +299,8 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
 
   // MouseListener events
   public void mouseClicked( MouseEvent e ) {
-    if( graphtoolbar.selectionMode == GraphToolBar.SELECT
+	System.out.println("Mouse clicked.");
+    if( graphtoolbar.selectionMode == GraphToolBar.SELECT //Click twice on a transition to edit it
         && e.getClickCount() == 2 ) {
       int x = e.getX();
       int y = e.getY();
@@ -320,7 +326,7 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
           }
       }
     }
-    if( graphtoolbar.selectionMode == GraphToolBar.DELETE
+    if( graphtoolbar.selectionMode == GraphToolBar.DELETE //Delete an object (state or transition)
         && e.getClickCount() == 1 ) {
       int x = e.getX();
       int y = e.getY();
@@ -351,7 +357,7 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
       }
       destroy = null;
     }
-    if( graphtoolbar.selectionMode == GraphToolBar.SETSTART ) {
+    if( graphtoolbar.selectionMode == GraphToolBar.SETSTART ) { //sets starting state
       int x = e.getX();
       int y = e.getY();
       for( int i = 0; i < states.size(); i++ ) {
@@ -363,7 +369,7 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
         }
       }
     }
-    if( graphtoolbar.selectionMode == GraphToolBar.SETCURRENT ) {
+    if( graphtoolbar.selectionMode == GraphToolBar.SETCURRENT ) { //sets current state
       int x = e.getX();
       int y = e.getY();
       for( int i = 0; i < states.size(); i++ ) {
@@ -377,7 +383,7 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
         }
       }
     }
-    if( graphtoolbar.selectionMode == GraphToolBar.SETHALT ) {
+    if( graphtoolbar.selectionMode == GraphToolBar.SETHALT ) { //makes a state into a halting state
       int x = e.getX();
       int y = e.getY();
       for( int i = 0; i < states.size(); i++ ) {
@@ -792,4 +798,23 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
       transitions.update();
   }
 
+
+  @Override
+  public void keyTyped(KeyEvent e) {
+    System.out.println("key typed");
+  }
+
+
+  @Override
+  public void keyPressed(KeyEvent e) {
+    System.out.println("key pressed");
+    
+  }
+
+
+  @Override
+  public void keyReleased(KeyEvent e) {
+    System.out.println("key released");
+    
+  }
 }
