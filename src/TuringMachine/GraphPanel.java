@@ -9,6 +9,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.event.KeyEvent;
@@ -97,8 +98,11 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
   public void run() {
     Thread me = Thread.currentThread();
     while ( me == go ) {
+      graphtoolbar.highlightSelectionMode();
       repaint();
-      requestFocusInWindow();
+      if(KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() == null) {
+          requestFocusInWindow();
+      } 
       try {
         Thread.sleep( 100 );
       }
@@ -299,7 +303,8 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
 
   // MouseListener events
   public void mouseClicked( MouseEvent e ) {
-	System.out.println("Mouse clicked.");
+	requestFocusInWindow();
+	
     if( graphtoolbar.selectionMode == GraphToolBar.SELECT //Click twice on a transition to edit it
         && e.getClickCount() == 2 ) {
       int x = e.getX();
@@ -801,20 +806,24 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
 
   @Override
   public void keyTyped(KeyEvent e) {
-    System.out.println("key typed");
+    //System.out.println("key typed");
   }
 
 
   @Override
   public void keyPressed(KeyEvent e) {
-    System.out.println("key pressed");
-    
+    //System.out.println("key pressed");
+    if(e.getKeyChar() == 's') {
+      graphtoolbar.selectionMode = GraphToolBar.INSERTSTATE;
+    }
   }
 
 
   @Override
   public void keyReleased(KeyEvent e) {
-    System.out.println("key released");
-    
+    //System.out.println("key released");
+    if(e.getKeyChar() == 's') {
+      graphtoolbar.selectionMode = GraphToolBar.SELECT;
+    }
   }
 }
