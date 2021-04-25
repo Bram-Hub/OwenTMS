@@ -813,17 +813,34 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
   @Override
   public void keyPressed(KeyEvent e) {
     //System.out.println("key pressed");
-    if(e.getKeyChar() == 's') {
+    if(e.getKeyChar() == '1') {
+      graphtoolbar.selectionMode = GraphToolBar.SELECT;
+    }
+    if(e.getKeyChar() == '2') {
       graphtoolbar.selectionMode = GraphToolBar.INSERTSTATE;
     }
+    if(e.getKeyChar() == '3') {
+      graphtoolbar.selectionMode = GraphToolBar.INSERTEDGE;
+    }
+    if(e.getKeyChar() == '4') {
+      graphtoolbar.selectionMode = GraphToolBar.DELETE;
+    }
+    if(e.getKeyChar() == '5') {
+      graphtoolbar.selectionMode = GraphToolBar.SETSTART;
+    }
+    if(e.getKeyChar() == '6') {
+      graphtoolbar.selectionMode = GraphToolBar.SETCURRENT;
+    }
+    if(e.getKeyChar() == '7') {
+      graphtoolbar.selectionMode = GraphToolBar.SETHALT;
+    }
+    
   }
 
 
   @Override
   public void keyReleased(KeyEvent e) {
     //System.out.println("key released");
-    if(e.getKeyChar() == 's') {
-      graphtoolbar.selectionMode = GraphToolBar.SELECT;
-    }
+    
   }
 }
