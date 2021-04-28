@@ -22,10 +22,13 @@ import java.awt.event.MouseWheelListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.QuadCurve2D;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Vector;
 
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -42,8 +45,10 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
   private static final long serialVersionUID = -4396915196603152278L;
   // interior components
   Vector<State> states = new Vector<State>( 100 );
+  Set<State> selectedStates = new HashSet<State>();
+  boolean multiSelect = false;
   SortedListModel transitions = new SortedListModel();
-  State pick, tempState1, tempState2;
+  State tempState1, tempState2;
   Edge tempEdge, pickEdge;
   Image offscreen;
   Dimension offscreensize;
@@ -64,6 +69,7 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
   private int maxZoomLevel = 10;
   private double zoomMultiplicationFactor = 1.1;
 
+  private Point lastMouseLocation;
   private Point dragStartScreen;
   private Point dragEndScreen;
 
@@ -145,7 +151,7 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
 
     int x = (int)n.x;
     int y = (int)n.y;
-    if( n == pick )
+    if( selectedStates.contains(n) )
       g.setColor( selectedStateColor );
     else if( n.currentState )
       g.setColor( currentStateColor );
@@ -304,11 +310,11 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
   // MouseListener events
   public void mouseClicked( MouseEvent e ) {
 	requestFocusInWindow();
-	
+	int x = e.getX();
+    int y = e.getY();
+    
     if( graphtoolbar.selectionMode == GraphToolBar.SELECT //Click twice on a transition to edit it
         && e.getClickCount() == 2 ) {
-      int x = e.getX();
-      int y = e.getY();
       for( int i = 0; i < transitions.size(); i++ ) {
         Edge m = transitions.elementAt( i );
         if( mouseInEdge( m, x, y ) ) {
@@ -321,20 +327,28 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
           newTransition.setVisible( true );
         }
       }
-      for( State s : states ) {
-          if(mouseIn (s, x, y)) {
-              EditStateDialog editState = new EditStateDialog(s,states,this);
+      for( State n : states ) {
+          if(mouseIn (n, x, y)) {
+              EditStateDialog editState = new EditStateDialog(n,states,this);
               editState.pack();
               editState.center();
               editState.validate();
               editState.setVisible(true);
+              
+              if(SwingUtilities.isLeftMouseButton(e) && !multiSelect) {
+                selectedStates.clear();
+                selectedStates.add(n);
+              }
           }
+      }
+      
+      if(SwingUtilities.isLeftMouseButton(e) && !mouseIn(selectedStates, x, y)) {
+        selectedStates.clear();
+        System.out.println("shouldnt be doing this for an rclick");
       }
     }
     if( graphtoolbar.selectionMode == GraphToolBar.DELETE //Delete an object (state or transition)
         && e.getClickCount() == 1 ) {
-      int x = e.getX();
-      int y = e.getY();
       State destroy = null;
       for( int i = 0; i < states.size(); i++ ) {
         State n = states.elementAt( i );
@@ -349,9 +363,10 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
           i--;
         }
       }
-      if( destroy != null )
+      if( destroy != null ) {
+        selectedStates.remove( destroy );
         states.removeElement( destroy );
-      else {
+      } else {
         Edge gone = null;
         for( int i = 0; i < transitions.size(); i++ ) {
           Edge n = transitions.elementAt( i );
@@ -363,8 +378,6 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
       destroy = null;
     }
     if( graphtoolbar.selectionMode == GraphToolBar.SETSTART ) { //sets starting state
-      int x = e.getX();
-      int y = e.getY();
       for( int i = 0; i < states.size(); i++ ) {
         State n = states.elementAt( i );
         if( mouseIn( n, x, y ) ) {
@@ -375,8 +388,6 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
       }
     }
     if( graphtoolbar.selectionMode == GraphToolBar.SETCURRENT ) { //sets current state
-      int x = e.getX();
-      int y = e.getY();
       for( int i = 0; i < states.size(); i++ ) {
         State n = states.elementAt( i );
         if( mouseIn( n, x, y ) ) {
@@ -389,8 +400,6 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
       }
     }
     if( graphtoolbar.selectionMode == GraphToolBar.SETHALT ) { //makes a state into a halting state
-      int x = e.getX();
-      int y = e.getY();
       for( int i = 0; i < states.size(); i++ ) {
         State n = states.elementAt( i );
         if( mouseIn( n, x, y ) ) {
@@ -403,50 +412,56 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
   }
 
   public void mousePressed( MouseEvent e ) {
+    int x = e.getX();
+    int y = e.getY();
+    lastMouseLocation = new Point(x, y);
+    
     if( graphtoolbar.selectionMode == GraphToolBar.SELECT ) {
-      int x = e.getX();
-      int y = e.getY();
-      for( int i = 0; i < states.size(); i++ ) {
-        State n = states.elementAt( i );
-        if( mouseIn( n, x, y ) ) {
-          pick = n;
-          pick.x = x;
-          pick.y = y;
-          break;
-        }
-      }
-      if( pick == null ) {
-        for( int i = 0; i < transitions.size(); i++ ) {
-          Edge n = transitions.elementAt( i );
-          if( mouseInEdge( n, x, y ) ) {
-            pickEdge = n;
-            if( pickEdge.fromState.x < pickEdge.toState.x ) {
-              if( e.getX() > pickEdge.fromState.x
-                  && e.getX() < pickEdge.toState.x )
-                pickEdge.shiftLabel = ((e.getX() - pickEdge.fromState.x ) / ( pickEdge.toState.x - pickEdge.fromState.x ) * 100 -50);
+      if(SwingUtilities.isLeftMouseButton(e)) {
+        for( int i = 0; i < states.size(); i++ ) {
+          State n = states.elementAt( i );
+          if( mouseIn( n, x, y ) ) {
+            if(!multiSelect && !selectedStates.contains(n)) {
+              selectedStates.clear();
+              //TODO clear selected edges
             }
-            else {
-              if( e.getX() < pickEdge.fromState.x
-                  && e.getX() > pickEdge.toState.x )
-                pickEdge.shiftLabel = -((e.getX() - pickEdge.toState.x ) / ( pickEdge.fromState.x - pickEdge.toState.x ) * 100 -50);
-            }
+            selectedStates.add(n);
             break;
           }
         }
-        if( pickEdge == null ) {
-          dragStartScreen = e.getPoint();
-          dragEndScreen = null;
-          setCursor( new Cursor( Cursor.MOVE_CURSOR ) );
+      }
+      
+      //TODO define behavior for adding edges to selection
+      for( int i = 0; i < transitions.size(); i++ ) {
+        Edge n = transitions.elementAt( i );
+        if( SwingUtilities.isLeftMouseButton(e) && mouseInEdge( n, x, y ) ) {
+          selectedStates.clear();
+          pickEdge = n;
+          if( pickEdge.fromState.x < pickEdge.toState.x ) {
+            if( e.getX() > pickEdge.fromState.x
+                && e.getX() < pickEdge.toState.x )
+              pickEdge.shiftLabel = ((e.getX() - pickEdge.fromState.x ) / ( pickEdge.toState.x - pickEdge.fromState.x ) * 100 -50);
+          }
+          else {
+            if( e.getX() < pickEdge.fromState.x
+                && e.getX() > pickEdge.toState.x )
+              pickEdge.shiftLabel = -((e.getX() - pickEdge.toState.x ) / ( pickEdge.fromState.x - pickEdge.toState.x ) * 100 -50);
+          }
+          break;
         }
+      }
+      
+      //set mouse cursor if dragging states or panning camera
+      if( pickEdge == null && (!selectedStates.isEmpty() || SwingUtilities.isRightMouseButton(e))) {
+        dragStartScreen = e.getPoint();
+        dragEndScreen = null;
+        setCursor( new Cursor( Cursor.MOVE_CURSOR ) );
       }
     }
     else if( graphtoolbar.selectionMode == GraphToolBar.INSERTSTATE ) {
       addState( e.getX(), e.getY(), getNextNodeName() );
-      pick = states.lastElement();
     }
-    else if( graphtoolbar.selectionMode == GraphToolBar.INSERTEDGE ) {
-      int x = e.getX();
-      int y = e.getY();
+    else if( graphtoolbar.selectionMode == GraphToolBar.INSERTEDGE ) {    
       for( int i = 0; i < states.size(); i++ ) {
         State n = states.elementAt( i );
         if( mouseIn( n, x, y ) ) {
@@ -455,17 +470,17 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
           addEdge( tempState1, tempState2 );
         }
       }
-    }
+    } //TODO add delete multi-select 
     messagepanel.updateLabels( machine.nonBlanks, machine.totalTransitions, machine.states.size(), machine.transitions.size());
     repaint();
     e.consume();
   }
 
   public void mouseReleased( MouseEvent e ) {
+    int x = e.getX();
+    int y = e.getY();
     if( graphtoolbar.selectionMode == GraphToolBar.INSERTEDGE ) {
       if( tempState2 != null ) {
-        int x = e.getX();
-        int y = e.getY();
         int i;
         Edge current = transitions.lastElement();
         for( i = 0; i < states.size(); i++ ) {
@@ -488,19 +503,8 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
         tempState2 = null;
       }
     }
-    else if( graphtoolbar.selectionMode == GraphToolBar.INSERTSTATE ) {
-      if( pick != null ) {
-        pick.x = e.getX();
-        pick.y = e.getY();
-        pick = null;
-      }
-    }
     else {
-      if( pick != null ) {
-        pick.x = e.getX();
-        pick.y = e.getY();
-        pick = null;
-      }
+      //TODO might have to add in functionality for updating each selected state's position after dragging?
       if( pickEdge != null ) {
         if( pickEdge.fromState.x < pickEdge.toState.x ) {
           if( e.getX() > pickEdge.fromState.x && e.getX() < pickEdge.toState.x )
@@ -526,15 +530,17 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
 
   // MouseMotionListener events
   public void mouseDragged( MouseEvent e ) {
-    if( graphtoolbar.selectionMode == GraphToolBar.SELECT && pick == null
-        && pickEdge == null ) moveCamera( e );
+    int x = e.getX();
+    int y = e.getY();
+    if( graphtoolbar.selectionMode == GraphToolBar.SELECT && !mouseIn(selectedStates, e.getX(), e.getY())
+        && pickEdge == null && SwingUtilities.isRightMouseButton(e)) {
+      moveCamera( e );
+    }
     if( graphtoolbar.selectionMode == GraphToolBar.INSERTEDGE ) {
       if( tempState2 != null ) {
         tempState2.x = e.getX();
         tempState2.y = e.getY();
       }
-      int x = e.getX();
-      int y = e.getY();
       for( int i = 0; i < states.size(); i++ ) {
         State n = states.elementAt( i );
         if( mouseIn( n, x, y ) )
@@ -542,22 +548,25 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
         else n.highlight = false;
       }
     }
-    else {
-      if( states.size() > 0 && pick != null ) {
-        pick.x = e.getX();
-        pick.y = e.getY();
-      }
-      if( pickEdge != null ) {
-        if( pickEdge.fromState.x < pickEdge.toState.x ) {
-          if( e.getX() > pickEdge.fromState.x && e.getX() < pickEdge.toState.x )
-            pickEdge.shiftLabel = ((e.getX() - pickEdge.fromState.x ) / ( pickEdge.toState.x - pickEdge.fromState.x ) * 100 -50);
+    else { //moving states, edges
+      if(SwingUtilities.isLeftMouseButton(e)) {
+        for(State n : selectedStates) {
+          n.x += x-lastMouseLocation.getX();
+          n.y += y-lastMouseLocation.getY();
         }
-        else {
-          if( e.getX() < pickEdge.fromState.x && e.getX() > pickEdge.toState.x )
-            pickEdge.shiftLabel = -((e.getX() - pickEdge.toState.x ) / ( pickEdge.fromState.x - pickEdge.toState.x ) * 100 -50);
+        if( pickEdge != null ) {
+          if( pickEdge.fromState.x < pickEdge.toState.x ) {
+            if( e.getX() > pickEdge.fromState.x && e.getX() < pickEdge.toState.x )
+              pickEdge.shiftLabel = ((e.getX() - pickEdge.fromState.x ) / ( pickEdge.toState.x - pickEdge.fromState.x ) * 100 -50);
+          }
+          else {
+            if( e.getX() < pickEdge.fromState.x && e.getX() > pickEdge.toState.x )
+              pickEdge.shiftLabel = -((e.getX() - pickEdge.toState.x ) / ( pickEdge.fromState.x - pickEdge.toState.x ) * 100 -50);
+          }
         }
       }
     }
+    lastMouseLocation = new Point(x, y);
     repaint();
     e.consume();
   }
@@ -600,9 +609,20 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
     zoomCamera( e );
   }
 
+  //checks if (x,y) is within the state being checked
   public boolean mouseIn( State check, int x, int y ) {
     if( x > check.x - w / 2 && x < check.x + w / 2 && y > check.y - h / 2
         && y < check.y + w / 2 ) return true;
+    return false;
+  }
+  
+  //checks if (x,y) is within any of the states in the vector being checked
+  public boolean mouseIn( Set<State> check, int x, int y ) {
+    for( State n : check ) {
+      if( mouseIn( n, x, y ) ) {
+        return true;
+      }
+    }
     return false;
   }
 
@@ -813,6 +833,12 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
   @Override
   public void keyPressed(KeyEvent e) {
     //System.out.println("key pressed");
+    
+    //Hold down LShift to multi-select
+    if(e.getKeyCode() == 16) { 
+      multiSelect = true;
+    }
+    
     if(e.getKeyChar() == '1') {
       graphtoolbar.selectionMode = GraphToolBar.SELECT;
     }
@@ -842,5 +868,9 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
   public void keyReleased(KeyEvent e) {
     //System.out.println("key released");
     
+    //Hold down LShift to multi-select
+    if(e.getKeyCode() == 16) {
+      multiSelect = false;
+    }
   }
 }
