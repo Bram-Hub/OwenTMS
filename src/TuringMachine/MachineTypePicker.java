@@ -22,15 +22,16 @@ public class MachineTypePicker extends JDialog {
 	JRadioButton quintupleButton;
 	JButton okButton;
 	
+	//allows you to choose between a quadruple and a quintuple machine
 	public MachineTypePicker() {
 		
 		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 		setModal(true);
 		setTitle("Machine Type");
-		
+		//selecting quadruple
 		quadrupleButton = new JRadioButton("Quadruple Machine");
 		quadrupleButton.setSelected(true);
-		
+		//selecting quintuple
 		quintupleButton = new JRadioButton("Quintuple Machine");
 
 		typeButtons = new ButtonGroup();
@@ -52,11 +53,11 @@ public class MachineTypePicker extends JDialog {
 		pane.add(okButton);
 		
 	}
-	
+	//returns whether the machine is a quadruple or a quintuple
 	int getMachineType() {
 		return quadrupleButton.isSelected() ? TM.QUADRUPLE : TM.QUINTUPLE;
 	}
-	
+	//finds the center of the screen
 	public void center() {
 	    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	    int screenWidth = screenSize.width;

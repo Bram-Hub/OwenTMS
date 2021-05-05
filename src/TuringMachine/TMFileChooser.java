@@ -61,6 +61,7 @@ public class TMFileChooser extends JFileChooser
 	{
 		this.setCurrentDirectory(new File(curdir));
 	}
+    //looks for the compatable file extensions
     TMFileFilter filter = new TMFileFilter();
     filter.addExtension("tm");
     filter.addExtension("tmo");
@@ -75,6 +76,7 @@ public class TMFileChooser extends JFileChooser
 	{
 		this.setCurrentDirectory(new File(curdir));
 	}
+    //if opening an html file
     if(variation == 1)
     {
       TMFileFilter filter = new TMFileFilter();
@@ -99,6 +101,7 @@ public class TMFileChooser extends JFileChooser
       setAccessory(optionPanel);
       maximum.setText("500");
     }
+    //if opening a tmo file
     else if(variation == 2)
     {
       TMFileFilter filter = new TMFileFilter();
@@ -106,6 +109,7 @@ public class TMFileChooser extends JFileChooser
       filter.setDescription("Turing Machine Graph files");
       setFileFilter(filter);
     }
+    //xml file
     else if(variation == 3)
     {
       TMFileFilter filter = new TMFileFilter();
@@ -113,6 +117,7 @@ public class TMFileChooser extends JFileChooser
       filter.setDescription("Turing Machine XML files");
       setFileFilter(filter);
     }
+    //txt file
     else if(variation == 4)
     {
       TMFileFilter filter = new TMFileFilter();
@@ -131,6 +136,9 @@ public class TMFileChooser extends JFileChooser
   {
     try
     {
+      /*tries to write over the file with the new File
+      and makes a new file if the name does not already
+      exist*/
       FileOutputStream outfile = new FileOutputStream(save);
       ObjectOutputStream saver = new ObjectOutputStream(outfile);
       saver.writeObject(graphpanel.states);
@@ -155,7 +163,7 @@ public class TMFileChooser extends JFileChooser
     }
     catch(Exception e){e.printStackTrace();}
   }
-
+  //saves as a tmo file with proper formatting
   public void saveTMOFile(File save)
   {
     try
@@ -268,6 +276,7 @@ public class TMFileChooser extends JFileChooser
   public void saveTapeFile(File save){
       try
       {
+          //saves just the tape
           Writer output = new BufferedWriter(new FileWriter(save));
           graphpanel.machine.tape.editCellAt(-1, -1);
           graphpanel.machine.tape.clearSelection();
@@ -280,7 +289,7 @@ public class TMFileChooser extends JFileChooser
       }
       catch(Exception e){e.printStackTrace();}
   }
-
+  //save the inputs
   public void saveInputFile(File save){
       try
       {
@@ -299,7 +308,7 @@ public class TMFileChooser extends JFileChooser
       }
       catch(Exception e){e.printStackTrace();}
   }
-
+  //save as xml
   public void saveXMLFile(File save){
     try
     {
@@ -395,10 +404,11 @@ public class TMFileChooser extends JFileChooser
     }
     catch(Exception e){e.printStackTrace();}
   }
-
+//opening files
 @SuppressWarnings("unchecked")
 public void openFile(File open)
   {
+      //recreates the file as it was saved, but with the default zoom
 	  graphpanel.machine.tape.editCellAt(-1, -1);
       graphpanel.machine.tape.clearSelection();
 	  System.out.println(open.toString());
@@ -421,7 +431,7 @@ public void openFile(File open)
       String toName;
       State from = new State(0,0,"temp",false);
       State to = new State(0,0,"temp",false);
-
+      //renajubg the individual elements
       graphpanel.transitions = new SortedListModel();
       for(int j = 0; j < edges; j++)
       {
@@ -435,6 +445,7 @@ public void openFile(File open)
         toX = opener.readDouble();
         toY = opener.readDouble();
         toName = (String)opener.readObject();
+        //remaing the states
         for(int i = 0; i < graphpanel.states.size(); i++)
         {
           State temp = graphpanel.states.elementAt(i);
@@ -443,6 +454,7 @@ public void openFile(File open)
           if(temp.x == toX && temp.y == toY && temp.stateName == toName)
             to = temp;
         }
+        //remaking the edges
         Edge insert = new Edge(from, to);
         insert.oldChar = oldChar;
         insert.newChar = newChar;
@@ -463,6 +475,7 @@ public void openFile(File open)
         temp.currentState = false;
         temp.highlight = false;
       }
+      //setting the turing machine type (quadruple or quintuple)
       if(graphpanel.transitions.size() > 0) {
     	  Edge e = graphpanel.transitions.elementAt(0);
     	  if(e.newChar == 0 || e.direction == TM.NULL) {
@@ -476,7 +489,7 @@ public void openFile(File open)
     }
     catch(Exception e){e.printStackTrace();}
   }
-
+  //opens tmo file
   public void openTMOFile(File open)
   {
 	int tempIndexOne;
@@ -508,6 +521,7 @@ public void openFile(File open)
 	tempIndexTwo = text.indexOf("*/");
 	tempString = text.substring(tempIndexOne+3,tempIndexTwo);
       int numStates = Integer.valueOf(tempString).intValue();
+      //remaing the states
       for(int j = 0; j < numStates; j++)
         graphpanel.addState(locationGenerator.nextInt((int)d.getWidth()), locationGenerator.nextInt((int)d.getHeight()), String.valueOf(j));
 
@@ -581,7 +595,7 @@ public void openFile(File open)
           else
             direction = TM.RIGHT;
         }
-
+        //remaking the edges
         Edge insert = new Edge(from, to);
         insert.oldChar = oldChar;
         insert.newChar = newChar;
@@ -609,7 +623,7 @@ public void openFile(File open)
     finally {
     }
   }
-
+    //opening an xml file
     public void openXMLFile(File open){
       try
       {
@@ -623,7 +637,7 @@ public void openFile(File open)
 
        Element docEle = xmldoc.getDocumentElement();
        NodeList nl = docEle.getElementsByTagName("States");
-
+       //remaking the states
        double x = 0;
        double y = 0;
        boolean finalstate = false;
@@ -669,7 +683,7 @@ public void openFile(File open)
                 }
            }
        }
-
+       //remaking the edges
        String fromstate = " ";
        String tostate = " ";
        char oldchar = 0;
@@ -747,7 +761,7 @@ public void openFile(File open)
       }
       catch(Exception e){e.printStackTrace();}
     }
-
+    //opening a tape file
     public void openTapeFile(File open)
     {
         try
@@ -758,7 +772,7 @@ public void openFile(File open)
           Vector<String> inputs = new Vector<String>();
 
           inputcheck = input.readLine();
-
+          //reads input line by line into the tape
           if(inputcheck.equals("Tape")){
         	  double size = Double.valueOf(input.readLine());
         	  

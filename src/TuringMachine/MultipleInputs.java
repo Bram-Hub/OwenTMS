@@ -120,7 +120,7 @@ public class MultipleInputs extends JFrame {
     }
     this.add( run );
     this.add( stop );
-
+    //if closing the program
     addWindowListener(new WindowAdapter()
     {
        public void windowClosing(WindowEvent e)
@@ -129,14 +129,14 @@ public class MultipleInputs extends JFrame {
          stopAll();
        }
     });
-    
+    //if clicking run
     run.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
         action = new Thread( new Runner() );
         action.start();
       }
     } );
-
+    //if clicking stop
     stop.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
     	machine.tape.setEnabled(true);
@@ -149,7 +149,8 @@ public class MultipleInputs extends JFrame {
     
     @SuppressWarnings("deprecation")
 	public void run() {
-    	Vector<String> inputstrings = new Vector<String>();
+    	//running the turing machine
+        Vector<String> inputstrings = new Vector<String>();
     	Vector<Integer> starts = new Vector<Integer>();
     	for( int i = 0; i < nPuts; i++ ) {
     		inputstrings.add(inputs.get( i ).getText());
@@ -229,6 +230,7 @@ public class MultipleInputs extends JFrame {
     
     public boolean validInput(Vector<String >inputstrings, Vector<Integer> starts)
     {
+        //checking if the machine is valid or not
     	for(int j = 0; j < inputstrings.size(); j++)
     	{
 	  	  int left = 0;
@@ -238,6 +240,7 @@ public class MultipleInputs extends JFrame {
 	  	  String temp1;
 	  	  for(int i = 0; i < inputstrings.elementAt(j).length(); i++)
 	  	  {
+              //whether or not the character is a valiid one
 	  		  if(!machine.validTapeChar(inputstrings.elementAt(j).charAt(i)))
 	  		  {
 	  			  return false;
@@ -277,7 +280,7 @@ public class MultipleInputs extends JFrame {
     	return true;
     }
 }
-
+  //user interrupt
   @SuppressWarnings( "deprecation" )
   private void stopAll() {
     execution.stop();

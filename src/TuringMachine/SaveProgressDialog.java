@@ -27,7 +27,7 @@ public class SaveProgressDialog extends JDialog
   
   public JProgressBar saveProgressBar;
   public JLabel indicator;
-
+  //sends the save dialog box
   public SaveProgressDialog(int number, Frame owner)
   {
     super(owner);
@@ -44,6 +44,7 @@ public class SaveProgressDialog extends JDialog
     repaint();
   }
 
+  //finds the center of the screen
   public void center()
   {
     Dimension screenSize =

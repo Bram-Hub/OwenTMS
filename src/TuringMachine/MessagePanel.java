@@ -125,8 +125,9 @@ public class MessagePanel extends JPanel {
     add( buttonpanel, BorderLayout.WEST );
     add( scrollmessages, BorderLayout.CENTER );
     add( optionspanel, BorderLayout.EAST );
-
+    
     start.addActionListener( new ActionListener() {
+      //clicking to start the turing machine
       public void actionPerformed( ActionEvent e ) {
     	 machine.tape.editCellAt(-1, -1);
     	 machine.tape.clearSelection();
@@ -141,7 +142,7 @@ public class MessagePanel extends JPanel {
         }
       }
     } );
-
+    //clicking to stop the turing machine
     stop.addActionListener( new ActionListener() {
       @SuppressWarnings( "deprecation" )
       public void actionPerformed( ActionEvent e ) {
@@ -161,7 +162,7 @@ public class MessagePanel extends JPanel {
         else addMessage( "Machine is not running" );
       }
     } );
-
+    //clicking to perform a single step of the turing machine
     step.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
         String result;
@@ -172,7 +173,7 @@ public class MessagePanel extends JPanel {
         addMessage( result );
       }
     } );
-
+    
     resetAll.addActionListener( new ActionListener() {
         public void actionPerformed( ActionEvent e ) {
             resetMachineAction();
@@ -215,6 +216,7 @@ public class MessagePanel extends JPanel {
   }
 
   public void loadInputAction() {
+      //laoding input string
       int left = 0;
       int leftpos = -1;
       int right = 0;
@@ -226,6 +228,7 @@ public class MessagePanel extends JPanel {
      machine.tape.clearSelection();
     for(int i = 0; i < input.length(); i++)
     {
+        //making sure the input is valid
         if(!machine.validTapeChar(input.charAt(i)))
         {
             addMessage( "Tape input contains invalid characters" );
@@ -258,6 +261,7 @@ public class MessagePanel extends JPanel {
             addMessage( "Improper use of []" );
             return;
         }
+        //successfully adding an elemnent to the tape
         start = leftpos;
         temp1 = input.substring(0,leftpos) + input.substring(leftpos+1, rightpos) + input.substring(rightpos+1);
         input = temp1;
@@ -268,16 +272,18 @@ public class MessagePanel extends JPanel {
 
   }
 
+  //setting the tape to be all 0s
   public void clearTapeAction() {
      	 machine.tape.editCellAt(-1, -1);
      	 machine.tape.clearSelection();
+      //going through each element of the tape and changing it to 0s
 	  for( int j = 0; j < machine.tape.getColumnCount(); j++ ) {
           machine.tape.setValueAt( new Character( '0' ), 0, j );
           machine.tape.getColumnModel().getColumn( j ).setHeaderValue(
         		  new Character( '0' ) );
         }
 	
-			
+	    //resetting the position of the read head
 		machine.tape.getColumnModel().getColumn( machine.tape.getColumnCount()/2 ).setHeaderValue(
 		          new Character( '-' ) );
 		machine.tape.getTableHeader().repaint();
@@ -296,20 +302,25 @@ public class MessagePanel extends JPanel {
 	  super.repaint();
   }
 
+  //resetting the machine
   public void resetMachineAction() {
         for( int i = 0; i < machine.states.size(); i++ ) {
+          //restting all of the states
           State n = machine.states.elementAt( i );
           n.currentState = false;
+          //reset the machine to the start state
           if( n.startState ) {
             n.currentState = true;
             machine.currentState = n;
           }
         }
+        //resetting the number of times it went on each esge
         machine.currentEdge = null;
         for( int i = 0; i < machine.transitions.size(); i++ ) {
           Edge n = machine.transitions.elementAt( i );
           n.currentEdge = false;
         }
+        //reseting the counter for transitions
         machine.totalTransitions = 0;
         updateLabels( machine.nonBlanks, machine.totalTransitions, machine.states.size(), machine.transitions.size()  );
         addMessage( "Machine Reset" );
@@ -330,6 +341,7 @@ public class MessagePanel extends JPanel {
         scrollmessages.getVerticalScrollBar().getMaximum() );
   }
 
+  //state some statistics about the machine
   public void updateLabels( int nonBlankChars, int transitions, int numStates, int numTransitions) {
     nonblanks.setText( new String( " Non 0's on Tape: " ).concat( String
         .valueOf( nonBlankChars ) ) );
@@ -338,7 +350,7 @@ public class MessagePanel extends JPanel {
     stateCount.setText( new String("States: ").concat(String.valueOf(numStates)));
     edgeCount.setText( new String("Transitions: ").concat(String.valueOf(numTransitions)));
   }
-
+  //telling the user the result of the turing machine
   public void showResults( int haltReason ) {
     addMessage( "\nMachine halted:" );
     switch ( haltReason ) {

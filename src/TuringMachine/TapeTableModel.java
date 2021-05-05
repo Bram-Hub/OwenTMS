@@ -20,7 +20,7 @@ import javax.swing.table.DefaultTableModel;
  * @version 1.0
  */
 
-
+//An implementation of DefaultTableModel with an override for getColumnClass
 public class TapeTableModel extends DefaultTableModel {
   /**
 	 * 

@@ -50,7 +50,7 @@ public class EditStateDialog extends JDialog {
     this.newState = newState;
     this.states = states;
     this.parent = parent;
-
+    //making the dialog panel
     halt.setSelected(newState.finalState);
     Container mypane = getContentPane();
     mypane.setLayout( new GridLayout( 3, 2, 0, 0 ) );
@@ -66,6 +66,7 @@ public class EditStateDialog extends JDialog {
 
     ok.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
+        //if the state is being renamed
         if( stateText.getText().length() > 0 ) {
           if (updateState()) {
             EditStateDialog.this.parent.update();
@@ -74,6 +75,7 @@ public class EditStateDialog extends JDialog {
         }
       }
     } );
+    //if the cancel button is clicked on
     cancel.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
         if( stateText.getText().length() > 0 ) {
@@ -83,6 +85,7 @@ public class EditStateDialog extends JDialog {
     } );
   }
 
+  //updates the name of the state
   boolean updateState() {
     boolean current = false;
     boolean start = false;
@@ -93,6 +96,7 @@ public class EditStateDialog extends JDialog {
 
       if( ( s.currentState ) ) current = true;
       if( ( s.startState ) ) start = true;
+      //if trying to rename a state to an already taken state
       if( s.stateName.equals(stateText.getText())) {
         WarningBox wb = new WarningBox("Error: This state name is already taken",this);
         wb.validate();
@@ -108,11 +112,11 @@ public class EditStateDialog extends JDialog {
 
     return true;
   }
-
+  //deletes the selected state
   void removeState() {
     states.removeElement( newState );
   }
-
+  //finds the center of the screen to place the pane
   public void center() {
     Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
     int screenWidth = screenSize.width;

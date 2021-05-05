@@ -38,7 +38,7 @@ public class GraphToolBar extends JPanel {
   // selection modes
   public final static int SELECT = 0, INSERTSTATE = 1, INSERTEDGE = 2, DELETE = 3,
       SETSTART = 4, SETCURRENT = 5, SETHALT = 6;
-
+  //adding the buttons
   private JToggleButton select = new JToggleButton();
   private JToggleButton insertState = new JToggleButton();
   private JToggleButton insertEdge = new JToggleButton();
@@ -81,7 +81,7 @@ public class GraphToolBar extends JPanel {
     add( setStartState );
     add( setCurrentState );
     add( setHaltState );
-
+    //selecting a state
     select.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
         insertState.setSelected( false );
@@ -93,6 +93,7 @@ public class GraphToolBar extends JPanel {
         selectionMode = SELECT;
       }
     } );
+    //adding a new state
     insertState.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
         select.setSelected( false );
@@ -104,7 +105,7 @@ public class GraphToolBar extends JPanel {
         selectionMode = INSERTSTATE;
       }
     } );
-
+    //adding a new edge
     insertEdge.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
         insertState.setSelected( false );
@@ -116,7 +117,7 @@ public class GraphToolBar extends JPanel {
         selectionMode = INSERTEDGE;
       }
     } );
-
+    //deleting a state
     delete.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
         insertState.setSelected( false );
@@ -128,7 +129,7 @@ public class GraphToolBar extends JPanel {
         selectionMode = DELETE;
       }
     } );
-
+    //setting the starting state
     setStartState.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
         insertState.setSelected( false );
@@ -140,7 +141,7 @@ public class GraphToolBar extends JPanel {
         selectionMode = SETSTART;
       }
     } );
-
+    //setting the current state
     setCurrentState.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
         insertState.setSelected( false );
@@ -152,6 +153,7 @@ public class GraphToolBar extends JPanel {
         selectionMode = SETCURRENT;
       }
     } );
+    //choosing a state to be an explicit halting state
     setHaltState.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
         insertState.setSelected( false );
