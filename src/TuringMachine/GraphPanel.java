@@ -319,11 +319,15 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
       for( int i = 0; i < transitions.size(); i++ ) {
         Edge m = transitions.elementAt( i );
         if( mouseInEdge( m, x, y ) && SwingUtilities.isRightMouseButton(e)) {
-          NewTransitionDialog newTransition = new NewTransitionDialog( m,
+          //the code in this bracket could be made into a function, but it only appears twice and would need repeat code around it (for settings) anyways
+          NewTransitionDialog newTransition = new NewTransitionDialog( m, //TODO: make this allowed for any selection mode
               transitions, machine.machineType,
               true, transitionpanel, messagepanel );
           newTransition.pack();
-          newTransition.center();
+          //TODO: make the location of a new popup toggleable (center on screen, set to mouse location, etc)
+          //newTransition.center(); //center on screen
+          newTransition.setLocation(e.getXOnScreen(), e.getYOnScreen()); //set to mouse location
+          newTransition.toFront(); //TODO: make this toggleable. it puts new popups at the front of all other windows
           newTransition.validate();
           newTransition.setVisible( true );
         }
@@ -333,7 +337,10 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
               if(SwingUtilities.isRightMouseButton(e)) {
                 EditStateDialog editState = new EditStateDialog(n,states,this);
                 editState.pack();
-                editState.center();
+                //TODO: make the location of a new popup toggleable (center on screen, set to mouse location, etc)
+                //editState.center(); //center on screen
+                editState.setLocation(e.getXOnScreen(), e.getYOnScreen()); //set to mouse location
+                editState.toFront(); //TODO: make this toggleable. it puts new popups at the front of all other windows
                 editState.validate();
                 editState.setVisible(true);
               }
@@ -502,10 +509,14 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
           State n = states.elementAt( i );
           if( mouseIn( n, x, y ) ) {
             current.toState = n;
-            NewTransitionDialog newTransition = new NewTransitionDialog(
-                current, transitions, machine.machineType, false, transitionpanel, messagepanel );
+            NewTransitionDialog newTransition = new NewTransitionDialog( current,
+                transitions, machine.machineType,
+                true, transitionpanel, messagepanel );
             newTransition.pack();
-            newTransition.center();
+            //TODO: make the location of a new popup toggleable (center on screen, set to mouse location, etc)
+            //newTransition.center(); //center on screen
+            newTransition.setLocation(e.getXOnScreen(), e.getYOnScreen()); //set to mouse location
+            newTransition.toFront(); //TODO: make this toggleable. it puts new popups at the front of all other windows
             newTransition.validate();
             newTransition.setVisible( true );
             break;

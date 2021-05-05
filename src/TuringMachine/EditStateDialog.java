@@ -133,5 +133,5 @@ public class EditStateDialog extends JDialog {
     }
     this.setLocation( x, y );
   }
-}
+ }
 
