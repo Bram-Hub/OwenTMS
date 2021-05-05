@@ -32,32 +32,39 @@ public class TM implements Runnable {
   int speed;
   TapeTableModel tapemodel = new TapeTableModel();
   TapeTable tape;
+  //current position of the read head
   int tapePos;
+  //leftmost position on the tape that has a character other than the default character
   int leftMost;
+  //same as above but for the rightmost position
   int rightMost;
+  //starting position of the read head
   int initPos;
   int initNonBlanks, nonBlanks;
   int totalTransitions;
   int moving;
   // references to exterior components
+  //the current state being looked at
   State currentState;
+  //the current edge being looked at
   Edge currentEdge;
+  //list of states
   Vector<State> states;
+  //list of transitiona
   DefaultListModel<Edge> transitions;
   MessagePanel messages;
   TransitionsPane transitionpanel;
   int machineType;
-
+  //constructor calls for the initialization of the machine
   public TM() {
     initMachine( TAPESIZE / 2, "", new StringBuffer( "" ) );
   }
   
-  
-
+  //basic setters
   public void setTransitions( DefaultListModel<Edge> transitions ) {
     this.transitions = transitions;
   }
-
+  
   public void setStates( Vector<State> states ) {
     this.states = states;
   }
@@ -79,19 +86,19 @@ public class TM implements Runnable {
       speed = VERYFAST;
     else speed = COMPUTE;
   }
-
+  
   public void setState( State newState ) {
     if( currentState != null ) currentState.currentState = false;
     currentState = newState;
     currentState.currentState = true;
   }
-
+ 
   public void setEdge( Edge newEdge ) {
     if( currentEdge != null ) currentEdge.currentEdge = false;
     currentEdge = newEdge;
     currentEdge.currentEdge = true;
   }
-
+  //sets currentEdge to null and making sure there are no transitions out of it
   public void clearEdge() {
     for( int j = 0; j < transitions.size(); j++ ) {
       Edge n = transitions.elementAt( j );
@@ -99,17 +106,21 @@ public class TM implements Runnable {
     }
     currentEdge = null;
   }
-
+  //checks whether or not the inputted character is a valid tape character
   public boolean validTapeChar( char ch ) {
     return( Character.isLetterOrDigit( ch ) || " +/*-!@#$%&()=,.[]".indexOf( ch ) > -1 );
   }
-
+  //sets up the machine
   public boolean initMachine( int initPos, String initChars,
       StringBuffer errorMsg ) {
-
+    
+    //settimg the initial position
     this.initPos = initPos;
+
+    //setting up the tape
     Vector<Character> tapeIndicator = new Vector<Character>();
     Vector<Character> tapeData = new Vector<Character>();
+    //clears the tape
     for( int i = 0; i < TAPESIZE; i++ ) {
       tapeIndicator.add( new Character( '0' ) );
       tapeData.add( new Character( DEFAULTCHAR ) );
@@ -121,6 +132,7 @@ public class TM implements Runnable {
     tape = new TapeTable( tapemodel , this);
     tape.setAutoResizeMode( JTable.AUTO_RESIZE_OFF );
     tape.getTableHeader().setReorderingAllowed(false);
+    //sets up the visualization for the tape
     for( int j = 0; j < TAPESIZE; j++ ) {
       TableColumn col = tape.getColumnModel().getColumn( j );
       col.setResizable(false);
@@ -131,10 +143,12 @@ public class TM implements Runnable {
       col.setCellEditor(new TapeEditor());
       col.setHeaderRenderer( new TapeHeaderRenderer() );
     }
-
+    //setting the initial tape values
     tapePos = initPos;
     leftMost = initPos;
     rightMost = initPos;
+
+    //making the tape visible
     tape.scrollRectToVisible( tape.getCellRect( 0, tapePos - 5, true ) );
     tape.scrollRectToVisible( tape.getCellRect( 0, tapePos + 5, true ) );
     initNonBlanks = 0;
@@ -145,7 +159,10 @@ public class TM implements Runnable {
     return true;
   }
 
+  //loads the given input string into the tape at a given starting position
+  //changing the dimensions of the tape to match the input
   public void loadInputString( String input, int startPos ) {
+      //makes sure the tape is empty
 	  for( int j = 0; j < tape.getColumnCount(); j++ ) {
           tape.getColumnModel().getColumn( j ).setHeaderValue(
         		  new Character( '0' ) );
@@ -189,7 +206,9 @@ public class TM implements Runnable {
     return output;
   }
 
+  //scrolls the tape when the cursor goes to move off of the visible tape
   public void scrollTape( int dir ) {
+    //case for moving left
     if( dir == LEFT ) {
       if( tapePos <= 20 ) {
         for( int j = 0; j < TAPESIZE; j++ ) {
@@ -210,6 +229,7 @@ public class TM implements Runnable {
       tape.scrollRectToVisible( tape.getCellRect( 0, tapePos + 5, true ) );
       if( tapePos < leftMost ) leftMost = tapePos;
     }
+    //case for moving right
     else if( dir == RIGHT ) {
       if( tapePos >= tape.getColumnCount() - 20 ) {
         for( int j = 0; j < TAPESIZE; j++ ) {
@@ -228,6 +248,7 @@ public class TM implements Runnable {
     }
   }
 
+  //runs the turing machine
   public void run() {
     // reachedHaltingState = true;
     go = true;
@@ -257,9 +278,12 @@ public class TM implements Runnable {
     tape.setEnabled(true);
   }
 
+  //transitions from one state to another
   public String transition() {
     go = true;
-    String temp = new String();
+   //temp is a string that holds the message that details the transition preformed
+   String temp = new String();
+    //case for an empty machine
     if( currentState == null ) {
       if( states.size() > 0 )
         setState( states.elementAt( 0 ) );
@@ -269,10 +293,13 @@ public class TM implements Runnable {
         return temp.concat( "Machine not created" );
       }
     }
+    //explicit halting case
     if( currentState.finalState ) {
       go = false;
       return temp.concat( "Machine halted" );
     }
+    //case where there is a valid transition
+    //reads out the current state
     temp = new String( "In state " + currentState.stateName + ", "
         + tape.getValueAt( 0, tapePos ).toString() + " read on tape:\n\t" );
     Edge fromTemp;
@@ -280,8 +307,11 @@ public class TM implements Runnable {
     char currentCharTemp2 = currentCharTemp.charAt( 0 );
     Character currentChar;
     currentChar = new Character( currentCharTemp2 );
+    //loop looks for the applicable transition
     for( int i = 0; i < transitions.size(); i++ ) {
       fromTemp = transitions.elementAt( i );
+      //if it finds a matching transition it performs it and adds the description
+      //to the return message
       if( fromTemp.fromState == currentState
           && fromTemp.oldChar == currentChar.charValue() ) {
         temp = temp
@@ -295,7 +325,9 @@ public class TM implements Runnable {
           temp = temp.concat( ", " + String.valueOf( fromTemp.newChar )
               + " written" );
         }
+        //if the tape needs to be scrolled
         scrollTape( fromTemp.direction );
+        //if the read head is being moved
         if( fromTemp.direction != NULL ) {
           temp = temp.concat( ", " );
           switch ( fromTemp.direction ) {
@@ -310,6 +342,7 @@ public class TM implements Runnable {
         setEdge( fromTemp );
         nextStateNotSet = true;
         transitionpanel.getViewport().repaint();
+        //performs the action at the speed set when run is called
         if( speed == SLOW )
           try {
             Thread.sleep( 500 );
@@ -336,6 +369,7 @@ public class TM implements Runnable {
         return temp;
       }
     }
+    //implicit halting case
     // reachedHaltingState=false;
     go = false;
     return temp.concat( "No applicable transition found\nMachine halted" );

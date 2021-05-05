@@ -13,7 +13,7 @@ import javax.swing.table.DefaultTableCellRenderer;
  * @version 1.0
  */
 
-
+//display for each individual cell on the tape
 public class TapeCellRenderer extends DefaultTableCellRenderer {
 
 	  private static final long serialVersionUID = 1L;

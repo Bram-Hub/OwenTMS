@@ -35,9 +35,7 @@ import javax.swing.event.DocumentListener;
  */
 
 public class NewTransitionDialog extends JDialog implements ActionListener, DocumentListener {
-  /**
-	 * 
-	 */
+  //makes a dialog box for creating a new transition
   private static final long serialVersionUID = -67446232348762031L;
   JLabel oldChar = new JLabel( "Character on Tape" );
   JLabel newChar = new JLabel( "New character" );
@@ -78,7 +76,7 @@ public class NewTransitionDialog extends JDialog implements ActionListener, Docu
     
     newCharText.setActionCommand("CharText");
     newCharText.getDocument().addDocumentListener(this);
-
+    //editing an existing transition
     if( edit ) {
       oldCharText.setText( String.valueOf( transition.oldChar ) );
       newCharText.setText( String.valueOf( transition.newChar ) );
@@ -116,7 +114,7 @@ public class NewTransitionDialog extends JDialog implements ActionListener, Docu
       }
     } );
   }
-
+  //updating a transition to make it match the new values
   void updateTransition() {
     transition.oldChar = oldCharText.getText().charAt( 0 );
     if( newCharText.getText().length() > 1 )
@@ -137,18 +135,20 @@ public class NewTransitionDialog extends JDialog implements ActionListener, Docu
     if( !edit ) transitions.removeElement( transition );
     
   }
-
+  //checking whether the transition is valid or not
   boolean checkItems() {
     String oldCharacter = oldCharText.getText();
     String newCharacter = newCharText.getText();
     if( newCharacter.equals( "NULL" ) )
       newCharacter = String.valueOf( (char)TM.NULL );
+    //more than one character
     if( oldCharacter.length() != 1 || newCharacter.length() != 1 ) {
       WarningBox temp = new WarningBox( "Error: Single Characters only", this );
       temp.validate();
       temp.setVisible( true );
       return false;
     }
+    //if a transition doesnt do anything
     if( newCharacter.equals( String.valueOf( (char)TM.NULL ) )
         && ( (String)directionPick.getSelectedItem() ).equals( "NULL" ) ) {
       WarningBox temp = new WarningBox( "Error: No action specified", this );
@@ -156,6 +156,7 @@ public class NewTransitionDialog extends JDialog implements ActionListener, Docu
       temp.setVisible( true );
       return false;
     }
+    //attempting to make a quintuple transition for a quadruple machine
     if( machineType == TM.QUADRUPLE
         && ( !newCharacter.equals( String.valueOf( (char)TM.NULL ) ) && !( (String)directionPick
             .getSelectedItem() ).equals( "NULL" ) ) ) {
@@ -165,6 +166,7 @@ public class NewTransitionDialog extends JDialog implements ActionListener, Docu
       temp.setVisible( true );
       return false;
     }
+    //attempting to make a quadruple transition for a quintuple machine
     if(machineType == TM.QUINTUPLE
         && ( newCharacter.equals( String.valueOf( (char)TM.NULL ) ) || ( (String)directionPick
             .getSelectedItem() ).equals( "NULL" ) ) ) {
@@ -178,6 +180,8 @@ public class NewTransitionDialog extends JDialog implements ActionListener, Docu
       for( int i = 0; i < transitions.size(); i++ ) {
         Edge n = transitions.elementAt( i );
         if( n.fromState == transition.fromState ) {
+          //if multiple transitions have the same starting state and value, 
+          //but lead to different outcomes
           if( n.oldChar == oldCharText.getText().charAt( 0 ) ) {
             WarningBox temp = new WarningBox(
                 "Error: Makes machine non-deterministic", this );
@@ -190,7 +194,7 @@ public class NewTransitionDialog extends JDialog implements ActionListener, Docu
     }
     return true;
   }
-
+  //finds the center of the screen
   public void center() {
     Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
     int screenWidth = screenSize.width;

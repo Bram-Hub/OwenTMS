@@ -38,6 +38,7 @@ public class WarningBox extends JDialog {
 	 */
   private static final long serialVersionUID = -1706140609251353405L;
 
+  //draws the warning box on the screen
   public WarningBox( String warning, Dialog owner ) {
     super( owner );
     JLabel warn = new JLabel( warning, JLabel.CENTER );
@@ -53,6 +54,7 @@ public class WarningBox extends JDialog {
     center();
     setTitle( "Error" );
 
+    //checks if the 'OK' button was clicked
     ok.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
         dispose();
@@ -60,6 +62,7 @@ public class WarningBox extends JDialog {
     } );
   }
 
+  //finds the center of the screen
   public void center() {
     Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
     int screenWidth = screenSize.width;
