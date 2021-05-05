@@ -1,9 +1,12 @@
 package TuringMachine;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -46,6 +49,7 @@ public class GraphToolBar extends JPanel {
   private JToggleButton setStartState = new JToggleButton( "Set Start" );
   private JToggleButton setCurrentState = new JToggleButton( "Set Current" );
   private JToggleButton setHaltState = new JToggleButton( "Set Halt" );
+  private ArrayList<JToggleButton> buttons = new ArrayList<JToggleButton>();
   private ImageIcon image1;
   private ImageIcon image2;
   private ImageIcon image3;
@@ -55,7 +59,11 @@ public class GraphToolBar extends JPanel {
   public GraphToolBar() {
     setBorder( BorderFactory.createEmptyBorder( 10, 5, 10, 5 ) );
     // setOrientation(VERTICAL);
-
+    JToggleButton[] buttonArray = {select, insertState, insertEdge, delete, setStartState, setCurrentState, setHaltState};
+    for(JToggleButton b : buttonArray) {
+      buttons.add(b);
+    }
+    
     image1 = new ImageIcon( TuringMachine.TuringMachineFrame.class
         .getResource( "/resources/select.gif" ) );
     image2 = new ImageIcon( TuringMachine.TuringMachineFrame.class
@@ -84,83 +92,48 @@ public class GraphToolBar extends JPanel {
 
     select.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
-        insertState.setSelected( false );
-        insertEdge.setSelected( false );
-        delete.setSelected( false );
-        setStartState.setSelected( false );
-        setCurrentState.setSelected( false );
-        setHaltState.setSelected( false );
         selectionMode = SELECT;
+        clearNotSelected();
       }
     } );
     insertState.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
-        select.setSelected( false );
-        insertEdge.setSelected( false );
-        delete.setSelected( false );
-        setStartState.setSelected( false );
-        setCurrentState.setSelected( false );
-        setHaltState.setSelected( false );
         selectionMode = INSERTSTATE;
+        clearNotSelected();
       }
     } );
 
     insertEdge.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
-        insertState.setSelected( false );
-        select.setSelected( false );
-        delete.setSelected( false );
-        setStartState.setSelected( false );
-        setCurrentState.setSelected( false );
-        setHaltState.setSelected( false );
         selectionMode = INSERTEDGE;
+        clearNotSelected();
       }
     } );
 
     delete.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
-        insertState.setSelected( false );
-        insertEdge.setSelected( false );
-        select.setSelected( false );
-        setStartState.setSelected( false );
-        setCurrentState.setSelected( false );
-        setHaltState.setSelected( false );
         selectionMode = DELETE;
+        clearNotSelected();
       }
     } );
 
     setStartState.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
-        insertState.setSelected( false );
-        insertEdge.setSelected( false );
-        select.setSelected( false );
-        delete.setSelected( false );
-        setCurrentState.setSelected( false );
-        setHaltState.setSelected( false );
         selectionMode = SETSTART;
+        clearNotSelected();
       }
     } );
 
     setCurrentState.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
-        insertState.setSelected( false );
-        insertEdge.setSelected( false );
-        select.setSelected( false );
-        setStartState.setSelected( false );
-        delete.setSelected( false );
-        setHaltState.setSelected( false );
         selectionMode = SETCURRENT;
+        clearNotSelected();
       }
     } );
     setHaltState.addActionListener( new ActionListener() {
       public void actionPerformed( ActionEvent e ) {
-        insertState.setSelected( false );
-        insertEdge.setSelected( false );
-        select.setSelected( false );
-        setStartState.setSelected( false );
-        delete.setSelected( false );
-        setCurrentState.setSelected( false );
         selectionMode = SETHALT;
+        clearNotSelected();
       }
     } );
   }
@@ -171,5 +144,21 @@ public class GraphToolBar extends JPanel {
 
   public Dimension getPreferredSize() {
     return new Dimension( 110, 500 );
+  }
+  
+  //Adds a border around the button currently selected
+  //This is used when a key is held down to toggle selection modes
+  public void highlightSelectionMode() {
+    buttons.get(selectionMode).setSelected(true);
+    clearNotSelected();
+  }
+  
+  public void clearNotSelected() {
+    for(int i = 0; i < buttons.size(); i++) {
+      JToggleButton b = buttons.get(i);
+      if(i != selectionMode) {
+        b.setSelected(false);
+      }
+    }
   }
 }
