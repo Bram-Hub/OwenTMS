@@ -145,7 +145,7 @@ public class MultipleInputs extends JFrame {
     } );
   }
 
-  private class Runner implements Runnable {
+  public class Runner implements Runnable {
     
     @SuppressWarnings("deprecation")
 	public void run() {

@@ -12,6 +12,7 @@ import java.awt.Image;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.RenderingHints;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -22,15 +23,23 @@ import java.awt.event.MouseWheelListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.QuadCurve2D;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import TuringMachine.MultipleInputs.Runner;
 
 /**
  * Title: Description: Copyright: Copyright (c) 2002 Company:
@@ -39,6 +48,13 @@ import javax.swing.event.ChangeListener;
  * @version 1.0
  */
 
+//Comparator for State objects
+class StateComparator implements Comparator<State> {
+	public int compare(State s1, State s2) {
+		return s1.stateName.compareTo(s2.stateName);
+	}	
+}
+
 public class GraphPanel extends JPanel implements Runnable, MouseListener,
     MouseMotionListener, MouseWheelListener, ChangeListener, KeyListener {
 
@@ -46,6 +62,8 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
   // interior components
   Vector<State> states = new Vector<State>( 100 );
   Set<State> selectedStates = new HashSet<State>();
+  ArrayList<State> clipStates = new ArrayList<State>();
+  ArrayList<Edge> clipEdges = new ArrayList<Edge>();
   boolean multiSelect = false;
   boolean draggingNewState = false;
   SortedListModel transitions = new SortedListModel();
@@ -76,6 +94,13 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
 
   private int h = 26;
   private int w = 26;
+  
+  //Initial shortcut keys
+  public static char copyKey = 'c';
+  public static char pasteKey = 'v';
+  public static char saveKey = 's';
+  public static char openKey = 'o';
+  private boolean ctrlHeld = false;
   
   public GraphPanel( GraphToolBar graphtoolbar ) {
     addMouseListener( this );
@@ -852,13 +877,68 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
   public void update() {
       transitions.update();
   }
+  
+  public void copy() {
+	  clipStates.clear();
+	  Map<State, State> stateMap = new HashMap<State, State>();
+	  for (State s : selectedStates) {
+		  State newState = new State(s.x, s.y, s.stateName, s.finalState);
+		  clipStates.add(newState);
+		  stateMap.put(s, newState);
+	  }
+	  clipEdges.clear();
+	  ArrayList<Edge> edges = new ArrayList<Edge>();
+	  for (int i = 0; i < transitions.size(); i++) {
+		  edges.add(transitions.get(i));
+	  }
+	  for (Edge e : edges) {
+		  if (stateMap.containsKey(e.toState) && stateMap.containsKey(e.fromState)) {
+			  Edge newEdge = new Edge(stateMap.get(e.fromState), stateMap.get(e.toState));
+			  newEdge.shiftLabel = e.shiftLabel;
+			  newEdge.oldChar = e.oldChar;
+			  newEdge.newChar = e.newChar;
+			  newEdge.direction = e.direction;
+			  clipEdges.add(newEdge);
+		  }
+	  }
+  }
+  
+  public void paste() {
+	  Set<State> newStatesSet = new HashSet<State>();
+	  ArrayList<State> newStates = new ArrayList<State>();
+	  double tmpX, tmpY;
+	  String tmpName;
+	  //Might need to sort clipStates somehow
+	  StateComparator comparator = new StateComparator();
+	  clipStates.sort(comparator);
+	  for (int i = 0; i < clipStates.size(); i++) {
+		  State oldState = clipStates.get(i);
+		  tmpX = oldState.x + 20;
+		  tmpY = oldState.y + 20;
+		  tmpName = getNextNodeName();
+		  State newState = new State(tmpX, tmpY, tmpName, oldState.finalState);
+		  states.addElement(newState);
+		  newStatesSet.add(newState);
+		  newStates.add(newState);
+	  }
+	  for (Edge e : clipEdges) {
+		  int stateFrom = clipStates.indexOf(e.fromState);
+		  int stateTo = clipStates.indexOf(e.toState);
+		  Edge newEdge = new Edge(newStates.get(stateFrom), newStates.get(stateTo));
+		  newEdge.shiftLabel = e.shiftLabel;
+		  newEdge.oldChar = e.oldChar;
+		  newEdge.newChar = e.newChar;
+		  newEdge.direction = e.direction;
+		  transitions.addElement(newEdge);
+	  }
+	  selectedStates = newStatesSet;
+  }
 
 
   @Override
   public void keyTyped(KeyEvent e) {
     //System.out.println("key typed");
   }
-
 
   @Override
   public void keyPressed(KeyEvent e) {
@@ -891,8 +971,79 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
       graphtoolbar.selectionMode = GraphToolBar.SETHALT;
     }
     
+    //Determines if ctrl is currently being held
+    if (e.getKeyCode() == KeyEvent.VK_CONTROL) {
+    	ctrlHeld = true;
+    }
+    
+    //Allows for shortcuts, only if ctrl is being held
+    if (ctrlHeld) {
+    	if (e.getKeyCode() + 32 == (int)copyKey) {
+    		System.out.println("Copied!");
+    		copy();
+    	}
+		if (e.getKeyCode() + 32 == pasteKey) {
+			System.out.println("Pasted!");
+			paste();
+		}
+		if (e.getKeyCode() + 32 == saveKey) {
+			//This is copy/pasted from TuringMachineFrame.java, since the method in
+			//that class cannot be called in this context
+			TMFileChooser filechooser = new TMFileChooser();
+		    filechooser.setGraphPanel(this);
+		    int confirm = filechooser.showSaveDialog(this);
+		    if(confirm == TMFileChooser.APPROVE_OPTION)
+		    {
+		      TMFileChooser.curdir = filechooser.getCurrentDirectory().toString();
+		      File newSelect;
+		      File select = filechooser.getSelectedFile();
+		      if(select.getName().endsWith(".tm"))
+		        newSelect = select;
+		      else
+		        newSelect = new File(select.getParent() + File.separator + select.getName() + ".tm");
+		      if(newSelect.exists())
+		      {
+		        int answer = JOptionPane.showConfirmDialog(this, newSelect.getName()+" already exists, overwrite?",
+		            "Error",JOptionPane.YES_NO_OPTION,JOptionPane.QUESTION_MESSAGE);
+		        switch(answer)
+		        {
+		          case JOptionPane.YES_OPTION :
+		            filechooser.saveFile(newSelect);
+		            break;
+		          case JOptionPane.NO_OPTION :
+		            return;
+		        }
+		      }
+		      else
+		        filechooser.saveFile(newSelect);
+		    }
+		}
+		if (e.getKeyCode() + 32 == openKey) {
+			System.out.println("Opening!");
+			TMFileChooser filechooser = new TMFileChooser();
+		    filechooser.setGraphPanel(this);
+		    int confirm = filechooser.showOpenDialog(this);
+		    if(confirm == TMFileChooser.APPROVE_OPTION)
+		    {
+		    	openFile(filechooser.getSelectedFile());
+		    }
+		}
+    }
+    
   }
 
+  public void openFile(File file) {
+	  TMFileChooser filechooser = new TMFileChooser();
+	  filechooser.setGraphPanel(this);
+	  if(file.getName().endsWith("tm"))
+	    filechooser.openFile(file);
+	  else if(file.getName().endsWith("tmo"))
+	    filechooser.openTMOFile(file);
+	  else if(file.getName().endsWith("txt"))
+	    filechooser.openTapeFile(file);
+	  else
+	    filechooser.openXMLFile(file);
+  }
 
   @Override
   public void keyReleased(KeyEvent e) {
@@ -901,6 +1052,11 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
     //Hold down LShift to multi-select
     if(e.getKeyCode() == 16) {
       multiSelect = false;
+    }
+    
+  //Determines if ctrl is released
+    if (e.getKeyCode() == KeyEvent.VK_CONTROL) {
+    	ctrlHeld = false;
     }
   }
 }

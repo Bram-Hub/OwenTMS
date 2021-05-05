@@ -76,6 +76,12 @@ public class TuringMachineFrame extends JFrame {
   /**
    * Help menu for the main menu bar
    */
+  
+  //Menu to register keyboard shortcuts
+  private JMenu jMenuShortcuts = new JMenu();
+  //Button in submenu to open a new window
+  private JMenuItem jMenuShortcutsRegister = new JMenuItem();
+  
   private JMenu jMenuHelp = new JMenu();
   /**
    * About option for the Help menu
@@ -206,6 +212,14 @@ public class TuringMachineFrame extends JFrame {
         jMenuHelpAbout_actionPerformed(e);
       }
     });
+    
+    jMenuShortcuts.setText("Shortcuts");
+    jMenuShortcutsRegister.setText("Set Shortcuts");
+    jMenuShortcutsRegister.addActionListener(new ActionListener()  {
+      public void actionPerformed(ActionEvent e) {
+        jMenuShortcutsRegister_actionPerformed(e);
+      }
+    });
 
     //add menu components to menu
     jMenuFile.add(jMenuFileNew);
@@ -219,7 +233,9 @@ public class TuringMachineFrame extends JFrame {
     jMenuFile.add(jMenuFileSaveExecution);
     jMenuFile.add(jMenuFileExit);
     jMenuHelp.add(jMenuHelpAbout);
+    jMenuShortcuts.add(jMenuShortcutsRegister);
     jMenuBar1.add(jMenuFile);
+    jMenuBar1.add(jMenuShortcuts);
     jMenuBar1.add(jMenuHelp);
     this.setJMenuBar(jMenuBar1);
 
@@ -484,6 +500,21 @@ public class TuringMachineFrame extends JFrame {
         saveNow.start();
       }
     }
+  }
+  
+  /**
+   * Shortcuts | Opens register shortcuts window
+   * @param e ActionEvent dummy variable
+   */
+  public void jMenuShortcutsRegister_actionPerformed(ActionEvent e) {
+	  TuringMachineFrame_ShortcutBox dlg = new TuringMachineFrame_ShortcutBox(this);
+	  Dimension dlgSize = dlg.getPreferredSize();
+	  Dimension frmSize = getSize();
+	  Point loc = getLocation();
+	  dlg.setLocation((frmSize.width - dlgSize.width) / 2 + loc.x, (frmSize.height - dlgSize.height) / 2 + loc.y);
+	  dlg.setModal(true);
+	  dlg.pack();
+	  dlg.setVisible(true);
   }
 
   /**
