@@ -378,7 +378,6 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
       
       if(SwingUtilities.isLeftMouseButton(e) && !mouseIn(selectedStates, x, y)) {
         selectedStates.clear();
-        System.out.println("shouldnt be doing this for an rclick");
       }
     }
     if( graphtoolbar.selectionMode == GraphToolBar.DELETE && e.getClickCount() == 1 ) { //Delete an object (state or transition)        
@@ -523,10 +522,13 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
   public void mouseReleased( MouseEvent e ) {
     int x = e.getX();
     int y = e.getY();
-    if( graphtoolbar.selectionMode == GraphToolBar.INSERTSTATE && SwingUtilities.isLeftMouseButton(e)) {
+    if( graphtoolbar.selectionMode == GraphToolBar.SELECT && SwingUtilities.isLeftMouseButton(e)) {
+      if(!multiSelect && selectedStates.size() == 1 && mouseIn(selectedStates.iterator().next(), x, y)) {
+        selectedStates.clear();
+      }
+    } else if( graphtoolbar.selectionMode == GraphToolBar.INSERTSTATE && SwingUtilities.isLeftMouseButton(e)) {
       draggingNewState = false;
-    }
-    if( graphtoolbar.selectionMode == GraphToolBar.INSERTEDGE && SwingUtilities.isLeftMouseButton(e)) {
+    } else if( graphtoolbar.selectionMode == GraphToolBar.INSERTEDGE && SwingUtilities.isLeftMouseButton(e)) {
       if( tempState2 != null ) {
         int i;
         Edge current = transitions.lastElement();
@@ -947,6 +949,13 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
     //Hold down LShift to multi-select
     if(e.getKeyCode() == 16) { 
       multiSelect = true;
+    }
+    
+    if(e.getKeyCode() == 127) {
+      for (State n : selectedStates) {
+        states.removeElement(n);
+      }
+      selectedStates.clear();
     }
     
     if(e.getKeyChar() == '1') {
