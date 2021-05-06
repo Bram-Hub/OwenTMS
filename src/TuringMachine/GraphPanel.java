@@ -1017,6 +1017,7 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
 		      else
 		        filechooser.saveFile(newSelect);
 		    }
+		    ctrlHeld = false;
 		}
 		if (e.getKeyCode() + 32 == openKey) {
 			System.out.println("Opening!");
@@ -1027,6 +1028,7 @@ public class GraphPanel extends JPanel implements Runnable, MouseListener,
 		    {
 		    	openFile(filechooser.getSelectedFile());
 		    }
+		    ctrlHeld = false;
 		}
     }
     
