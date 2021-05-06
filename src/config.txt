@@ -1,4 +1,4 @@
-copy: c
+copy: a
 paste: v
-save: s
-open file: r
+save: q
+open file: S

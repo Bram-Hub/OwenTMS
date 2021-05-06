@@ -253,7 +253,7 @@ public class TuringMachineFrame_ShortcutBox extends JDialog implements ActionLis
 		@Override
 		public void keyPressed(KeyEvent e) {
 			changeChar = e.getKeyChar();
-			if (Character.isLetterOrDigit(e.getKeyChar())) {
+			if (e.getKeyChar() >= 33 && e.getKeyChar() <= 126) { //Should cover most keys 
 				if (changingCopy) {
 					if (!(e.getKeyChar() == pasteKey.charAt(0) || e.getKeyChar() == saveKey.charAt(0)
 							|| e.getKeyChar() == openKey.charAt(0))) {
