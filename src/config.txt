@@ -1,0 +1,4 @@
+copy: a
+paste: v
+save: q
+open file: S

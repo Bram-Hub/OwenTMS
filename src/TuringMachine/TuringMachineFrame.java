@@ -241,6 +241,8 @@ public class TuringMachineFrame extends JFrame {
 
     contentPane.add(statusBar, BorderLayout.SOUTH);
     contentPane.add(machine, BorderLayout.CENTER);
+    
+    TuringMachineFrame_ShortcutBox.readConfig();
 
   }
   /**
