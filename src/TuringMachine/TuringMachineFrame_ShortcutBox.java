@@ -10,6 +10,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -79,7 +85,7 @@ public class TuringMachineFrame_ShortcutBox extends JDialog implements ActionLis
 		label1.setText( "Copy: Ctrl + " + copyKey );
 		label2.setText( "Paste: Ctrl + " + pasteKey );
 		label3.setText( "Save: Ctrl + " + saveKey );
-		label4.setText( "Run: Ctrl + " + openKey );
+		label4.setText( "Open: Ctrl + " + openKey );
 		insetsPanel3.setLayout( gridLayout1 );
 		insetsPanel3.setBorder( BorderFactory.createEmptyBorder( 10, 60, 10, 10 ) );
 		button1.setText( "OK" );
@@ -103,7 +109,7 @@ public class TuringMachineFrame_ShortcutBox extends JDialog implements ActionLis
 		setCopy.addActionListener( new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
 				System.out.println(requestFocusInWindow());
-				setCopy.setText("Enter");
+				setCopy.setText("Type key");
 				setPaste.setText("Set Paste");
 				setSave.setText("Set Save");
 				setOpen.setText("Set Open");
@@ -111,19 +117,21 @@ public class TuringMachineFrame_ShortcutBox extends JDialog implements ActionLis
 				changingPaste = false;
 				changingSave = false;
 				changingOpen = false;
+				TuringMachineFrame_ShortcutBox.writeConfig();
 			}
 		});
 		setPaste.addActionListener( new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
 				System.out.println(requestFocusInWindow());
 				setCopy.setText("Set Copy");
-				setPaste.setText("Enter");
+				setPaste.setText("Type key");
 				setSave.setText("Set Save");
 				setOpen.setText("Set Open");
 				changingCopy = false;
 				changingPaste = true;
 				changingSave = false;
 				changingOpen = false;
+                TuringMachineFrame_ShortcutBox.writeConfig();
 			}
 		});
 		setSave.addActionListener( new ActionListener() {
@@ -131,12 +139,13 @@ public class TuringMachineFrame_ShortcutBox extends JDialog implements ActionLis
 				System.out.println(requestFocusInWindow());
 				setCopy.setText("Set Copy");
 				setPaste.setText("Set Paste");
-				setSave.setText("Enter");
+				setSave.setText("Type key");
 				setOpen.setText("Set Open");
 				changingCopy = false;
 				changingPaste = false;
 				changingSave = true;
 				changingOpen = false;
+                TuringMachineFrame_ShortcutBox.writeConfig();
 	      }
 		});
 		setOpen.addActionListener( new ActionListener() {
@@ -145,11 +154,12 @@ public class TuringMachineFrame_ShortcutBox extends JDialog implements ActionLis
 				setCopy.setText("Set Copy");
 				setPaste.setText("Set Paste");
 				setSave.setText("Set Save");
-				setOpen.setText("Enter");
+				setOpen.setText("Type key");
 				changingCopy = false;
 				changingPaste = false;
 				changingSave = false;
 				changingOpen = true;
+                TuringMachineFrame_ShortcutBox.writeConfig();
 			}
 		});
 		
@@ -159,6 +169,60 @@ public class TuringMachineFrame_ShortcutBox extends JDialog implements ActionLis
 		insetsPanel4.add(setOpen);
 		panel2.add(insetsPanel4, BorderLayout.WEST);
 		setResizable( true );
+	}
+	
+	//Reads shortcuts from a config file
+	public static void readConfig() {
+	  try {
+	    BufferedReader reader = new BufferedReader(new FileReader("config.txt"));
+	    String line = null;
+        
+        while ((line = reader.readLine()) != null) {
+          if(line.contains("copy: ")) {
+            int i = line.indexOf(":");
+            GraphPanel.copyKey = line.charAt(i+2);
+            
+          } else if(line.contains("paste: ")) {
+            int i = line.indexOf(":");
+            GraphPanel.pasteKey = line.charAt(i+2);
+            
+          } else if(line.contains("save: ")) {
+            int i = line.indexOf(":");
+            GraphPanel.saveKey = line.charAt(i+2);
+            
+          } else if(line.contains("open file: ")) {
+            int i = line.indexOf(":");
+            GraphPanel.openKey = line.charAt(i+2);
+          } 
+        }
+        
+        reader.close();
+	  } catch(FileNotFoundException f) {
+	    f.printStackTrace();
+	  } catch(IOException e) {
+	    e.printStackTrace();
+	  } catch(IndexOutOfBoundsException i) {
+	    System.err.println("Make sure config lines are of format function: [key]");
+	  }  
+	}
+	
+	public static void writeConfig() {
+	  try {
+        StringBuffer strBuffer = new StringBuffer();
+        strBuffer.append("copy: " + GraphPanel.copyKey + System.lineSeparator());
+        strBuffer.append("paste: " + GraphPanel.pasteKey + System.lineSeparator());
+        strBuffer.append("save: " + GraphPanel.saveKey + System.lineSeparator());
+        strBuffer.append("open file: " + GraphPanel.openKey + System.lineSeparator());
+        
+        FileWriter writer = new FileWriter("config.txt");
+        writer.append(strBuffer.toString());
+        writer.close();
+        
+	  } catch(FileNotFoundException f) {
+	    
+	  } catch(IOException e) {
+	    
+	  }
 	}
 	
 	// Overridden so we can exit when window is closed
@@ -207,7 +271,7 @@ public class TuringMachineFrame_ShortcutBox extends JDialog implements ActionLis
 						GraphPanel.pasteKey = changeChar;
 					}
 					setPaste.setText("Set Paste");
-					label2.setText( "Copy: Ctrl + " + pasteKey );
+					label2.setText( "Paste: Ctrl + " + pasteKey );
 					changingPaste = false;
 				}
 				if (changingSave) {
@@ -217,7 +281,7 @@ public class TuringMachineFrame_ShortcutBox extends JDialog implements ActionLis
 						GraphPanel.saveKey = changeChar;
 					}
 					setSave.setText("Set Save");
-					label3.setText( "Copy: Ctrl + " + saveKey );
+					label3.setText( "Save: Ctrl + " + saveKey );
 					changingSave = false;
 				}
 				if (changingOpen) {
@@ -226,8 +290,8 @@ public class TuringMachineFrame_ShortcutBox extends JDialog implements ActionLis
 						openKey = changeChar + "";
 						GraphPanel.openKey = changeChar;
 					}
-					setOpen.setText("Set Run");
-					label4.setText( "Copy: Ctrl + " + openKey );
+					setOpen.setText("Set Open");
+					label4.setText( "Open: Ctrl + " + openKey );
 					changingOpen = false;
 				}
 			}

@@ -1,0 +1,4 @@
+copy: c
+paste: v
+save: s
+open file: r
