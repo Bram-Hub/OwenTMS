@@ -8,37 +8,16 @@ Scott Tritten
 Christopher French  
 2015:
 Chris Brenon
+2021:
+Jaden Beck
+Mason Sklar
+Maxwell Rothman
 
 ## About
 This is a turing machine simulation software created by RPI students.
 
 How to use:
-Save:   Saves transitions, with X,Y positions  (automatically adds .tm extension)
-Save Graph: Saves transitions, without X,Y positions (automatically adds .tmo extension)
-
-## Planned Changes
-- ~~Reset / rewrite machine button~~
-- ~~disable quadruple machine field when one is filled~~
-- ~~fix numbering system~~
-    - ~~reorganize right-hand window~~
-- ~~don't pop window when node is inserted~~
-    - ~~add ability to double click to change node name~~
-- ~~Create new Turing Machine~~
-- ~~Show number of states and transitions~~
-- ~~Show number transitions when doing multiple inputs~~
-- ~~Only allow for user to select TM type when a new TM is created~~
-    - ~~Automatically detect TM type when opening machine~~
-- ~~Allow user to open Turing Machine file from command-line~~
-- ~~Change "New TM" to clear, and give a "New TM" option that opens a new window~~
-- ~~Fix behavior when user presses the close button on a pop-up~~
-- ~~Allow user to select TM type on command-line~~
-- shortcut buttons
-- Allow for user to create comments
-- Allow for user to rectangularly select nodes & transitions
-- Allow for user to copy and paste nodes and transitions
-- Disable modification of tape while TM is running
-- Documentation
-- Add JUnit testing
+See user manual.
 
 ## Installation
 Build instructions: 
@@ -51,6 +30,34 @@ Also, you can run java -jar TuringMachine4.jar -h to get these usage instruction
 
 Otherwise, if you drag an input file onto the .jar or .bat file (on windows), the software will open with that TM file.
 
+---VERSION 5.0 BETA NOTES--------------------------------------
+Note: this beta is currently unstable, with known bugs significantly affecting use.
+
+__Interactivity Overhaul!__
+
+New Features:
+- Programmable keyboard shortcuts
+- Hotkeys
+- Multiple selection of states
+- Copy/Paste
+- Label editing windows appear by the mouse, making them easier to find on setups with multiple displays
+- Left/Right click differentiation, allowing for more possible actions
+
+Visual User Guide PDF Available
+
+Code Documentation Added
+
+Known Bugs:
+- when editing labels, the machine states that labels can contain single characters only. this can be solved by pressing backspace before entering the label. a real solution is being worked on.
+- bugs existing in version 4.0 are still live issues.
+
+Additional Feature Ideas:
+- Ability to add comments to the drawing area
+- Customizable hotkey menu
+- Undo/Redo
+- Toggleable grid mode, so objects can be placed more neatly
+- More customizable transition edge lines
+    - Unreal Engine's Blueprint system is a fantastic flowchart model
 
 ---VERSION 4.0 RELEASE NOTES--------------------------------------
 New Features:
